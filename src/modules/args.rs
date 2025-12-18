@@ -25,6 +25,9 @@ pub enum Commands {
     Install,
     /// Uninstall a component
     Uninstall,
+    /// debug theme
+    #[cfg(debug_assertions)]
+    Dev,
 }
 
 #[derive(Subcommand)]

@@ -8,5 +8,7 @@ fn main() {
         args::Commands::Update => utils::update(),
         args::Commands::Install => utils::install(),
         args::Commands::Uninstall => utils::uninstall(),
+        #[cfg(debug_assertions)]
+        args::Commands::Dev => utils::dev(),
     }
 }
