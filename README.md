@@ -1,2 +1,3 @@
-# zsh.theme.infinite
-.
+# Infinite
+
+a zsh theme
