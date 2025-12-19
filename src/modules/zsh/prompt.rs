@@ -1,32 +1,154 @@
 mod left;
 mod right;
 mod transient;
-use crate::{args::PromptType, zsh::theme::PromptTheme};
+use crate::zsh::theme::PromptTheme;
 pub use left::left;
 pub use right::right;
 use serde::{Deserialize, Serialize};
 pub use transient::transient;
+use zsh_seq::ZshPromptBuilder;
 
 impl Prompt {
+    fn left_separation(&self) -> usize {
+        if self.left.is_empty() {
+            0
+        } else {
+            self.left.len() + 1
+        }
+    }
+    fn right_separation(&self) -> usize {
+        if self.right.is_empty() {
+            0
+        } else {
+            self.right.len() + 1
+        }
+    }
+    fn total_separation(&self) -> usize {
+        self.left_separation() + self.right_separation()
+    }
     pub fn add_left(&mut self, content: &str) {
         self.left.push(content.to_string());
     }
     pub fn add_right(&mut self, content: &str) {
         self.right.push(content.to_string());
     }
-    pub fn render_left() -> String {
-        "".to_string()
+    pub fn render_left(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        let start_sep_color = theme.color.separation.get(0.0);
+        let bg_color = theme.color.bg;
+        let end_sep_color = theme
+            .color
+            .separation
+            .get(self.left_separation() as f32 / self.total_separation() as f32);
+        let start_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .color(start_sep_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .color_bg(start_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .end_color_bg();
+        let end_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .end_color()
+            .color_bg(end_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color()
+            .end_color_bg()
+            .color(end_sep_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color();
+        let mut builder = ZshPromptBuilder::new().connect(start_cap);
+        builder = self
+            .left
+            .iter()
+            .enumerate()
+            .fold(builder, |b, (i, content)| {
+                let b = b.end_color().color_bg(bg_color).str(content).end_color();
+                if i == self.left.len() - 1 {
+                    b
+                } else {
+                    b.color(
+                        theme
+                            .color
+                            .separation
+                            .get(i as f32 / self.total_separation() as f32),
+                    )
+                    .str(&theme.separation.sep_line().left)
+                }
+            });
+        builder = builder.connect(end_cap);
+
+        builder
     }
-    pub fn render_right() -> String {
-        "".to_string()
+    pub fn render_right(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        if self.right.is_empty() {
+            return ZshPromptBuilder::new();
+        }
+
+        let bg_color = theme.color.bg;
+        // 右側の開始地点（左端）のセパレーター色
+        let start_sep_color = theme
+            .color
+            .separation
+            .get(self.left_separation() as f32 / self.total_separation() as f32);
+        // 右側の終了地点（右端）のセパレーター色
+        let end_sep_color = theme.color.separation.get(1.0);
+
+        // 右プロンプトの開始キャップ（左側の境界）
+        let start_cap = ZshPromptBuilder::new()
+            .color(start_sep_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .color_bg(start_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color();
+
+        // 右プロンプトの終了キャップ（右端の境界）
+        let end_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .color_bg(end_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color()
+            .color(end_sep_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color();
+
+        let mut builder = ZshPromptBuilder::new().connect(start_cap);
+
+        // fold を使用して右側の要素を結合
+        builder = self
+            .right
+            .iter()
+            .enumerate()
+            .fold(builder, |b, (i, content)| {
+                let b = b.color_bg(bg_color).str(content).end_color_bg();
+
+                // 最後の要素でなければセパレーターを追加
+                if i == self.right.len() - 1 {
+                    b
+                } else {
+                    // 色の計算位置を右側のオフセットに合わせる
+                    let color_pos =
+                        (self.left_separation() + i + 1) as f32 / self.total_separation() as f32;
+                    b.color(theme.color.separation.get(color_pos))
+                        .str(&theme.separation.sep_line().right) // 右用セパレーター
+                        .end_color()
+                }
+            });
+
+        builder.connect(end_cap)
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Prompt {
-    pub left: Vec<String>,
-    pub right: Vec<String>,
-    pub theme: PromptTheme,
+    left: Vec<String>,
+    right: Vec<String>,
 }
 #[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptConnection {
