@@ -25,11 +25,10 @@ impl Default for PromptContents {
     fn default() -> Self {
         Self {
             left: vec![
-                PromptContent::Env("USER".to_string()),
-                PromptContent::Shell(vec!["hostname".to_string()]),
+                PromptContent::Shell(vec!["zsh".to_string(), "-c".to_string(), "echo $(whoami)@$(hostname)".to_string()]),
             ],
             right: vec![
-                PromptContent::Env("PWD".to_string()),
+                PromptContent::Shell(vec!["zsh".to_string(), "-c".to_string(), "echo ${PWD/#$HOME/\\~}".to_string()]),
             ],
         }
     }

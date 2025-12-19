@@ -40,7 +40,8 @@ pub fn dev() {
         // TERMがないと画面が崩れたり、色が使えなかったりします
         .env("TERM", env::var("TERM").unwrap_or_default())
         // 一部のプログラムが参照するため USER も入れておくと安全です
-        .env("USER", env::var("USER").unwrap_or_default());
+        .env("USER", env::var("USER").unwrap_or_default())
+        .current_dir(&run_dir);
 
     child
         .spawn()
