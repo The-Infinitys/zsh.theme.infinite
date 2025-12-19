@@ -1,8 +1,5 @@
 use super::paths;
-use std::{
-    env, fs,
-    path::PathBuf,
-};
+use std::{env, fs, path::PathBuf};
 
 pub fn install() {
     let install_paths = match paths::get_install_paths() {
@@ -43,9 +40,11 @@ pub fn install() {
             return;
         }
     };
-    let target_exe_path = install_paths
-        .bin_dir
-        .join(current_exe_path.file_name().expect("Failed to get file name"));
+    let target_exe_path = install_paths.bin_dir.join(
+        current_exe_path
+            .file_name()
+            .expect("Failed to get file name"),
+    );
 
     match fs::copy(&current_exe_path, &target_exe_path) {
         Ok(_) => println!("Executable copied to: {:?}", target_exe_path),
@@ -128,25 +127,32 @@ fi
 
     match fs::read_to_string(&user_zshrc_path) {
         Ok(mut zshrc_content) => {
-            let source_line = format!("source \"{}\"", install_paths.zshrc_snippet_path.to_string_lossy());
+            let source_line = format!(
+                "source \"{}\"",
+                install_paths.zshrc_snippet_path.to_string_lossy()
+            );
             let installer_comment_start = "# Added by zsh-infinite installer";
-            
+
             // Check if the source line (or the entire snippet block) is already present
             if !zshrc_content.contains(&source_line) {
                 // Prepend the comment and the source line
-                zshrc_content.push_str(&format!("\n{}\n{}\n", installer_comment_start, source_line));
+                zshrc_content
+                    .push_str(&format!("\n{}\n{}\n", installer_comment_start, source_line));
                 match fs::write(&user_zshrc_path, zshrc_content) {
                     Ok(_) => println!("'{}' added to ~/.zshrc.", source_line),
                     Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
                 }
             } else {
-                println!("'{}' already present in ~/.zshrc. Skipping modification.", source_line);
+                println!(
+                    "'{}' already present in ~/.zshrc. Skipping modification.",
+                    source_line
+                );
             }
         }
         Err(e) => eprintln!("Error reading ~/.zshrc: {}", e),
     }
 
-    println!("\nInstallation complete! Please restart your Zsh session or run 'source ~/.zshrc' to apply the changes.");
+    println!(
+        "\nInstallation complete! Please restart your Zsh session or run 'source ~/.zshrc' to apply the changes."
+    );
 }
-
-

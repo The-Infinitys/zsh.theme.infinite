@@ -24,7 +24,7 @@ impl Prompt {
         }
     }
     fn total_separation(&self) -> usize {
-        self.left_separation() + self.right_separation()
+        self.left_separation() + self.right_separation() + 1
     }
     pub fn add_left(&mut self, content: &str) {
         self.left.push(content.to_string());
@@ -39,6 +39,12 @@ impl Prompt {
             .color
             .separation
             .get(self.left_separation() as f32 / self.total_separation() as f32);
+        eprintln!(
+            "{},{}, {}",
+            self.left_separation(),
+            self.right_separation(),
+            self.total_separation()
+        );
         let start_cap = ZshPromptBuilder::new()
             .end_color_bg()
             .color(start_sep_color)
@@ -74,7 +80,7 @@ impl Prompt {
                         theme
                             .color
                             .separation
-                            .get(i as f32 / self.total_separation() as f32),
+                            .get((i + 1) as f32 / self.total_separation() as f32),
                     )
                     .str(&theme.separation.sep_line().left)
                 }
@@ -93,7 +99,7 @@ impl Prompt {
         let start_sep_color = theme
             .color
             .separation
-            .get(self.left_separation() as f32 / self.total_separation() as f32);
+            .get(1.0 - self.right_separation() as f32 / self.total_separation() as f32);
         // 右側の終了地点（右端）のセパレーター色
         let end_sep_color = theme.color.separation.get(1.0);
 

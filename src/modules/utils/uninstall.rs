@@ -40,7 +40,10 @@ pub fn uninstall() {
             ),
         }
     } else {
-        println!("Theme file not found at {:?}", install_paths.theme_file_path);
+        println!(
+            "Theme file not found at {:?}",
+            install_paths.theme_file_path
+        );
     }
 
     // 3. Remove zshrc snippet file
@@ -85,9 +88,15 @@ pub fn uninstall() {
 
                 // Remove the source line and the comment
                 let updated_content = zshrc_content
-                    .replace(&format!("\n{}\n{}\n", installer_comment_start, source_line), "\n")
+                    .replace(
+                        &format!("\n{}\n{}\n", installer_comment_start, source_line),
+                        "\n",
+                    )
                     .replace(&format!("\n{}\n", source_line), "\n") // Fallback in case comment was not there
-                    .replace(&format!("{}\n{}\n", installer_comment_start, source_line), "") // For start of file without preceding newline
+                    .replace(
+                        &format!("{}\n{}\n", installer_comment_start, source_line),
+                        "",
+                    ) // For start of file without preceding newline
                     .replace(&source_line, ""); // Final fallback for line itself
 
                 if updated_content.len() != original_len {

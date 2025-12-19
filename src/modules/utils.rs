@@ -1,10 +1,10 @@
 mod dev;
 mod install;
+mod paths;
 mod uninstall;
 mod update;
-mod paths;
 pub use dev::dev;
 pub use install::install;
+pub use paths::*;
 pub use uninstall::uninstall;
 pub use update::update;
-pub use paths::*;
