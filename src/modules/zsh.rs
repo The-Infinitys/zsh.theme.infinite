@@ -1,7 +1,9 @@
 use crate::args::{PromptSide, ZshCommands};
 
 mod prompt;
-mod theme;
+pub mod theme; // Make theme public
+mod theme_manager;
+pub use theme_manager::{load_theme, save_theme};
 
 pub fn main(command: ZshCommands) {
     match command {

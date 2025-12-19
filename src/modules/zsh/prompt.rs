@@ -4,6 +4,7 @@ pub use left::left;
 pub use right::right;
 
 use crate::{args::PromptSide, zsh::theme::PromptTheme};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct PromptBox {
@@ -16,7 +17,7 @@ pub struct Prompt {
     pub boxes: Vec<PromptBox>,
     pub theme: PromptTheme,
 }
-#[derive(Clone, Default, Copy)]
+#[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptConnection {
     None,
     #[default]
@@ -52,7 +53,7 @@ impl Default for PromptCurveLine {
         }
     }
 }
-#[derive(Clone, Default, Copy)]
+#[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptSeparation {
     Block,
     #[default]

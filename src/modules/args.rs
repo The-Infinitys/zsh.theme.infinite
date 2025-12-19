@@ -28,6 +28,8 @@ pub enum Commands {
     /// debug theme
     #[cfg(debug_assertions)]
     Dev,
+    /// Manage Zsh theme
+    Theme,
 }
 
 #[derive(Subcommand)]

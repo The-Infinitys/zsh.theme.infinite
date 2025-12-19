@@ -10,5 +10,6 @@ fn main() {
         args::Commands::Uninstall => utils::uninstall(),
         #[cfg(debug_assertions)]
         args::Commands::Dev => utils::dev(),
+        args::Commands::Theme => zsh::theme::main(),
     }
 }
