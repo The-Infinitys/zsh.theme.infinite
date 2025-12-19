@@ -183,4 +183,9 @@ name = "zsh-infinite"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "zsh-seq",
 ]
+
+[[package]]
+name = "zsh-seq"
+version = "0.1.0"
