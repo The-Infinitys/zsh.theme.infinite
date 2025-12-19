@@ -68,15 +68,14 @@ pub fn save_theme(theme: &PromptTheme) -> io::Result<()> {
         fs::create_dir_all(config_dir)?;
 
         let content = serde_yaml::to_string(theme)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| io::Error::other(e.to_string()))?;
 
         let mut file = fs::File::create(&theme_file_path)?;
         file.write_all(content.as_bytes())?;
         eprintln!("Theme saved successfully to: {:?}", theme_file_path);
         Ok(())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
+        Err(io::Error::other(
             "Could not determine project directories to save theme file.",
         ))
     }

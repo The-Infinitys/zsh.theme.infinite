@@ -32,15 +32,11 @@ pub async fn left() {
         tokio::join!(join_all(left_futures), join_all(right_futures));
 
     // Prompt構造体に追加
-    for content_option in left_contents_results {
-        if let Some(content) = content_option {
-            prompt.add_left(&content);
-        }
+    for content in left_contents_results.into_iter().flatten() {
+        prompt.add_left(&content);
     }
-    for content_option in right_contents_results {
-        if let Some(content) = content_option {
-            prompt.add_right(&content);
-        }
+    for content in right_contents_results.into_iter().flatten() {
+        prompt.add_right(&content);
     }
 
     let left_content = prompt.render_left(&theme);

@@ -181,7 +181,7 @@ impl SeparationColor {
                     return NamedColor::White;
                 }
                 if stops.len() == 1 {
-                    return stops[0].0.clone();
+                    return stops[0].0;
                 }
 
                 let mut sorted_stops = stops.clone();
@@ -189,11 +189,11 @@ impl SeparationColor {
 
                 let first = &sorted_stops[0];
                 if progress <= first.1 {
-                    return first.0.clone();
+                    return first.0;
                 }
                 let last = &sorted_stops[sorted_stops.len() - 1];
                 if progress >= last.1 {
-                    return last.0.clone();
+                    return last.0;
                 }
 
                 for i in 0..sorted_stops.len() - 1 {
@@ -204,7 +204,7 @@ impl SeparationColor {
                         return lerp_named_color(c1, c2, t);
                     }
                 }
-                stops[0].0.clone()
+                stops[0].0
             }
         }
     }
@@ -309,9 +309,9 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
         .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
         .map(|s| {
-            named_color_serde::deserialize_from_str(&s).unwrap_or_else(|_| default_color.clone())
+            named_color_serde::deserialize_from_str(&s).unwrap_or_else(|_| *default_color)
         })
-        .unwrap_or_else(|_| default_color.clone())
+        .unwrap_or_else(|_| *default_color)
 }
 
 fn configure_colors(theme: &mut PromptTheme) {
@@ -325,7 +325,7 @@ fn configure_colors(theme: &mut PromptTheme) {
     let options = ["Single Color", "Rainbow", "Gradient"];
     let selection = Select::new()
         .with_prompt("Choose separation color type")
-        .items(&options)
+        .items(options)
         .default(match theme.color.separation {
             SeparationColor::Single(_) => 0,
             SeparationColor::Rainbow(_) => 1,
@@ -362,7 +362,7 @@ fn configure_connection(theme: &mut PromptTheme) {
     let selection = Select::new()
         .with_prompt("Choose style")
         .items(
-            &options
+            options
                 .iter()
                 .map(|o| format!("{:?}", o))
                 .collect::<Vec<_>>(),
@@ -390,7 +390,7 @@ fn configure_separation(theme: &mut PromptTheme) {
     let selection = Select::new()
         .with_prompt("Choose style")
         .items(
-            &options
+            options
                 .iter()
                 .map(|o| format!("{:?}", o))
                 .collect::<Vec<_>>(),
@@ -418,7 +418,7 @@ pub async fn main() {
         ];
         let selection = Select::new()
             .with_prompt("Main Menu")
-            .items(&options)
+            .items(options)
             .interact()
             .unwrap();
 

@@ -26,8 +26,7 @@ pub fn get_install_paths() -> Result<InstallPaths, io::Error> {
             zshrc_snippet_path,
         })
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
+        Err(io::Error::other(
             "Could not determine project directories for installation.",
         ))
     }

@@ -12,7 +12,7 @@ pub async fn transient(exit_code: Option<i32>) {
 
     let prompt = ZshPromptBuilder::new()
         .color(color)
-        .str(&transient_str)
+        .str(transient_str)
         .end_color()
         .reset_styles();
 
