@@ -1,17 +1,17 @@
 use zsh_seq::ZshPromptBuilder;
 
-use crate::zsh::{
-    prompt::{PromptConnection, PromptCurveLine},
-    theme_manager,
-};
+use crate::zsh::{prompt::PromptCurveLine, theme_manager};
 
 pub async fn right() {
     let theme = theme_manager::load_theme();
     let curved_lines = PromptCurveLine::from(theme.connection);
-    let prompt = ZshPromptBuilder::new()
+    let h = &curved_lines.horizontal;
+    let b = &curved_lines.bottom_right;
+    let builder = ZshPromptBuilder::new()
         .color(theme.color.sc)
-        .str(&curved_lines.horizontal)
-        .str(curved_lines.bottom_right.as_str())
+        .str(h)
+        .str(b)
         .end_color();
-    print!("{}", prompt.build());
+
+    println!("{}", builder.build());
 }

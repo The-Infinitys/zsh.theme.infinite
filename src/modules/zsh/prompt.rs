@@ -184,7 +184,7 @@ impl fmt::Display for PromptConnection {
             Self::Dotted => "┄",
             Self::Dot => "·",
             Self::Bullet => "•",
-            Self::Wave => "〜",
+            Self::Wave => "~",
             Self::ZigZag => "≈",
             Self::Bar => "█",
             Self::Gradient => "▒",
