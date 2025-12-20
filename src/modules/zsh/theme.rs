@@ -25,64 +25,63 @@ impl Default for PromptContents {
     fn default() -> Self {
         Self {
             left: vec![
-                PromptContent::Shell(vec![
+                PromptContent::new(vec![
                     "zsh".to_string(),
                     "-c".to_string(),
                     "whoami".to_string(),
                 ]),
-                PromptContent::Shell(vec![
+                PromptContent::new(vec![
                     "zsh".to_string(),
                     "-c".to_string(),
                     "hostname".to_string(),
                 ]),
             ],
             right: vec![
-                PromptContent::Shell(vec![
+                PromptContent::new(vec![
                     "zsh".to_string(),
                     "-c".to_string(),
                     "echo ${PWD/#$HOME/\\~}".to_string(),
                 ]),
-                PromptContent::Env("?".to_string()),
+                PromptContent::new(vec![
+                    "zsh".to_string(),
+                    "-c".to_string(),
+                    "echo $?".to_string(),
+                ]),
             ],
         }
     }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum PromptContent {
-    Shell(Vec<String>),
-    Env(String),
+pub struct PromptContent {
+    shell: Vec<String>,
 }
 
 use tokio::process::Command;
 
-// ... 既存のコード ...
-
 impl PromptContent {
+    pub fn new(shell: Vec<String>) -> Self {
+        Self { shell }
+    }
     pub async fn content(&self) -> Option<String> {
-        match self {
-            Self::Shell(args) => {
-                if args.is_empty() {
-                    return None;
-                }
-                let output = Command::new(&args[0])
-                    .args(&args[1..])
-                    .output()
-                    .await
-                    .ok()?;
+        if self.shell.is_empty() {
+            return None;
+        }
+        let output = Command::new(&self.shell[0])
+            .args(&self.shell[1..])
+            .output()
+            .await
+            .ok()?;
 
-                if output.status.success() {
-                    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if stdout.is_empty() {
-                        None
-                    } else {
-                        Some(stdout)
-                    }
-                } else {
-                    None
-                }
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if stdout.is_empty() {
+                None
+            } else {
+                Some(stdout)
             }
-            Self::Env(var_name) => std::env::var(var_name).ok(),
+        } else {
+            None
         }
     }
 }
@@ -154,7 +153,10 @@ where
                     let pos = parts[1].parse::<f32>().map_err(de::Error::custom)?;
                     stops.push(((r, g, b), pos));
                 } else {
-                    return Err(de::Error::custom(format!("Invalid gradient stop format: {}", s)));
+                    return Err(de::Error::custom(format!(
+                        "Invalid gradient stop format: {}",
+                        s
+                    )));
                 }
             }
             Ok(stops)
@@ -308,9 +310,7 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
         .with_prompt(prompt_text)
         .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
-        .map(|s| {
-            named_color_serde::deserialize_from_str(&s).unwrap_or(*default_color)
-        })
+        .map(|s| named_color_serde::deserialize_from_str(&s).unwrap_or(*default_color))
         .unwrap_or_else(|_| *default_color)
 }
 
@@ -318,7 +318,10 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
 fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8, u8, u8) {
     Input::new()
         .with_prompt(prompt_text)
-        .default(format!("#{:02X}{:02X}{:02X}", default_rgb.0, default_rgb.1, default_rgb.2))
+        .default(format!(
+            "#{:02X}{:02X}{:02X}",
+            default_rgb.0, default_rgb.1, default_rgb.2
+        ))
         .interact_text()
         .map(|s| {
             if s.starts_with('#') && s.len() == 7 {
@@ -366,7 +369,7 @@ fn configure_colors(theme: &mut PromptTheme) {
         }
         2 => {
             let c1_rgb = prompt_for_rgb_color("Gradient Start Color (Hex)", (0, 255, 255)); // Cyan
-            let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255));   // Blue
+            let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255)); // Blue
             SeparationColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
         }
         _ => unreachable!(),
@@ -455,4 +458,3 @@ pub async fn main() {
         }
     }
 }
-
