@@ -5,9 +5,9 @@ use crate::zsh::theme::PromptTheme;
 pub use left::left;
 pub use right::right;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 pub use transient::transient;
 use zsh_seq::ZshPromptBuilder;
-use std::fmt;
 
 impl Prompt {
     fn left_separation(&self) -> usize {
@@ -25,7 +25,7 @@ impl Prompt {
         }
     }
     fn total_separation(&self) -> usize {
-        self.left_separation() + self.right_separation() + 1
+        self.left_separation() + self.right_separation()
     }
     pub fn add_left(&mut self, content: &str) {
         self.left.push(content.to_string());
@@ -39,7 +39,7 @@ impl Prompt {
         let end_sep_color = theme
             .color
             .separation
-            .get(self.left_separation() as f32 / self.total_separation() as f32);
+            .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
         eprintln!(
             "{},{}, {}",
             self.left_separation(),
@@ -81,7 +81,7 @@ impl Prompt {
                         theme
                             .color
                             .separation
-                            .get((i + 1) as f32 / self.total_separation() as f32),
+                            .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
                     )
                     .str(&theme.separation.sep_line().left)
                 }
@@ -100,9 +100,12 @@ impl Prompt {
         let start_sep_color = theme
             .color
             .separation
-            .get(1.0 - self.right_separation() as f32 / self.total_separation() as f32);
+            .get(1.0 - self.right_separation() as f32 / (self.total_separation() + 1) as f32);
         // 右側の終了地点（右端）のセパレーター色
-        let end_sep_color = theme.color.separation.get(1.0);
+        let end_sep_color = theme
+            .color
+            .separation
+            .get(1.0 - 1.0 / (self.total_separation() + 1) as f32);
 
         // 右プロンプトの開始キャップ（左側の境界）
         let start_cap = ZshPromptBuilder::new()
@@ -141,8 +144,8 @@ impl Prompt {
                     b
                 } else {
                     // 色の計算位置を右側のオフセットに合わせる
-                    let color_pos =
-                        (self.left_separation() + i + 1) as f32 / self.total_separation() as f32;
+                    let color_pos = (self.left_separation() + i + 2) as f32
+                        / (self.total_separation() + 1) as f32;
                     b.color(theme.color.separation.get(color_pos))
                         .str(&theme.separation.sep_line().right) // 右用セパレーター
                         .end_color()
