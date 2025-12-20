@@ -106,12 +106,18 @@ pub struct PromptColorScheme {
     pub pc: NamedColor,
     #[serde(with = "named_color_serde")]
     pub sc: NamedColor,
-    pub separation: SeparationColor,
+    pub accent: AccentColor,
+    pub accent_which: AccentWhich,
 }
-
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub enum AccentWhich {
+    #[default]
+    ForeGround,
+    BackGround,
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum SeparationColor {
+pub enum AccentColor {
     Single(#[serde(with = "named_color_serde")] NamedColor),
     Rainbow(#[serde(with = "named_color_serde")] NamedColor),
     // Gradientにカスタムシリアライザを適用
@@ -178,7 +184,7 @@ where
 
 // --- 色計算ロジック ---
 
-impl SeparationColor {
+impl AccentColor {
     pub fn get(&self, progress: f32) -> NamedColor {
         match self {
             Self::Single(color) => color.to_owned(),
@@ -309,7 +315,8 @@ impl Default for PromptColorScheme {
             fg: NamedColor::White,
             pc: NamedColor::Cyan,
             sc: NamedColor::LightBlack,
-            separation: SeparationColor::Single(NamedColor::LightBlack),
+            accent: AccentColor::Single(NamedColor::LightBlack),
+            accent_which: AccentWhich::default(),
         }
     }
 }
@@ -376,14 +383,14 @@ fn configure_colors(theme: &mut PromptTheme) {
         "Default Rainbow Gradient",
         "Custom Gradient",
     ];
-    let default_selection = match &theme.color.separation {
-        SeparationColor::Single(_) => 0,
-        SeparationColor::Rainbow(_) => 1,
+    let default_selection = match &theme.color.accent {
+        AccentColor::Single(_) => 0,
+        AccentColor::Rainbow(_) => 1,
         // Default Rainbow Gradient と Custom Gradient を区別するために、既存のグラデーションが
         // デフォルトの虹色グラデーションと一致するかどうかを簡易的に判定するか、
         // または単に Custom Gradient にフォールバックさせるかを検討。
         // ここでは簡単に Custom Gradient にフォールバックさせます。
-        SeparationColor::Gradient(_) => 3, // Custom Gradient に対応
+        AccentColor::Gradient(_) => 3, // Custom Gradient に対応
     };
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -393,24 +400,24 @@ fn configure_colors(theme: &mut PromptTheme) {
         .interact()
         .unwrap();
 
-    theme.color.separation = match selection {
-        0 => SeparationColor::Single(prompt_for_named_color("Color", &NamedColor::LightBlack)),
+    theme.color.accent = match selection {
+        0 => AccentColor::Single(prompt_for_named_color("Color", &NamedColor::LightBlack)),
         1 => {
             let color = prompt_for_named_color(
                 "Rainbow Start Color (Hex)",
                 &NamedColor::FullColor((255, 0, 0)),
             );
-            SeparationColor::Rainbow(color)
+            AccentColor::Rainbow(color)
         }
         2 => {
             // Default Rainbow Gradient
-            SeparationColor::Gradient(create_default_rainbow_gradient())
+            AccentColor::Gradient(create_default_rainbow_gradient())
         }
         3 => {
             // Custom Gradient (Existing 2-point gradient)
             let c1_rgb = prompt_for_rgb_color("Gradient Start Color (Hex)", (0, 255, 255)); // Cyan
             let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255)); // Blue
-            SeparationColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
+            AccentColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
         }
         _ => unreachable!(),
     };

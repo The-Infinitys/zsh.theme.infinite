@@ -34,11 +34,11 @@ impl Prompt {
         self.right.push(content.to_string());
     }
     pub fn render_left(&self, theme: &PromptTheme) -> ZshPromptBuilder {
-        let start_sep_color = theme.color.separation.get(0.0);
+        let start_sep_color = theme.color.accent.get(0.0);
         let bg_color = theme.color.bg;
         let end_sep_color = theme
             .color
-            .separation
+            .accent
             .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
         let start_cap = ZshPromptBuilder::new()
             .end_color_bg()
@@ -74,7 +74,7 @@ impl Prompt {
                     b.color(
                         theme
                             .color
-                            .separation
+                            .accent
                             .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
                     )
                     .str(&theme.separation.sep_line().left)
@@ -93,12 +93,12 @@ impl Prompt {
         // 右側の開始地点（左端）のセパレーター色
         let start_sep_color = theme
             .color
-            .separation
+            .accent
             .get(1.0 - self.right_separation() as f32 / (self.total_separation() + 1) as f32);
         // 右側の終了地点（右端）のセパレーター色
         let end_sep_color = theme
             .color
-            .separation
+            .accent
             .get(1.0 - 1.0 / (self.total_separation() + 1) as f32);
 
         // 右プロンプトの開始キャップ（左側の境界）
@@ -140,7 +140,7 @@ impl Prompt {
                     // 色の計算位置を右側のオフセットに合わせる
                     let color_pos = (self.left_separation() + i + 2) as f32
                         / (self.total_separation() + 1) as f32;
-                    b.color(theme.color.separation.get(color_pos))
+                    b.color(theme.color.accent.get(color_pos))
                         .str(&theme.separation.sep_line().right) // 右用セパレーター
                         .end_color()
                 }
