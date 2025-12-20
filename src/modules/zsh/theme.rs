@@ -170,10 +170,13 @@ impl SeparationColor {
         match self {
             Self::Single(color) => color.to_owned(),
             Self::Rainbow(base_color) => {
-                // BaseColorからHueを抽出して回転させる
-                let start_hue = get_hue_from_named_color(base_color);
+                let (r, g, b) = match base_color {
+                    NamedColor::FullColor(rgb) => *rgb,
+                    _ => (255, 0, 0), // デフォルト赤
+                };
+                let (start_hue, saturation, lightness) = rgb_to_hsl(r, g, b);
                 let hue = (start_hue + progress * 360.0) % 360.0;
-                let rgb = hsl_to_rgb(hue, 1.0, 0.5);
+                let rgb = hsl_to_rgb(hue, saturation, lightness);
                 NamedColor::FullColor(rgb)
             }
             Self::Gradient(stops) => {
@@ -210,35 +213,6 @@ impl SeparationColor {
     }
 }
 
-fn get_hue_from_named_color(color: &NamedColor) -> f32 {
-    let (r, g, b) = match color {
-        NamedColor::FullColor(rgb) => (
-            rgb.0 as f32 / 255.0,
-            rgb.1 as f32 / 255.0,
-            rgb.2 as f32 / 255.0,
-        ),
-        _ => (1.0, 0.0, 0.0), // デフォルト赤
-    };
-    let max = r.max(g).max(b);
-    let min = r.min(g).min(b);
-    let delta = max - min;
-    if delta == 0.0 {
-        return 0.0;
-    }
-    let mut h = if max == r {
-        (g - b) / delta % 6.0
-    } else if max == g {
-        (b - r) / delta + 2.0
-    } else {
-        (r - g) / delta + 4.0
-    };
-    h *= 60.0;
-    if h < 0.0 {
-        h += 360.0;
-    }
-    h
-}
-
 fn lerp_named_color(c1: &NamedColor, c2: &NamedColor, t: f32) -> NamedColor {
     let get_rgb = |c: &NamedColor| match c {
         NamedColor::FullColor(rgb) => *rgb,
@@ -251,6 +225,39 @@ fn lerp_named_color(c1: &NamedColor, c2: &NamedColor, t: f32) -> NamedColor {
     let g = (rgb1.1 as f32 + (rgb2.1 as f32 - rgb1.1 as f32) * t) as u8;
     let b = (rgb1.2 as f32 + (rgb2.2 as f32 - rgb1.2 as f32) * t) as u8;
     NamedColor::FullColor((r, g, b))
+}
+
+fn rgb_to_hsl(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
+    let r_f = r as f32 / 255.0;
+    let g_f = g as f32 / 255.0;
+    let b_f = b as f32 / 255.0;
+
+    let max = r_f.max(g_f).max(b_f);
+    let min = r_f.min(g_f).min(b_f);
+    let delta = max - min;
+
+    let mut h = 0.0;
+    let s = if max == 0.0 {
+        0.0
+    } else {
+        delta / (1.0 - (2.0 * ((max + min) / 2.0) - 1.0).abs())
+    };
+    let l = (max + min) / 2.0;
+
+    if delta != 0.0 {
+        h = if max == r_f {
+            (g_f - b_f) / delta % 6.0
+        } else if max == g_f {
+            (b_f - r_f) / delta + 2.0
+        } else {
+            (r_f - g_f) / delta + 4.0
+        };
+        h *= 60.0;
+        if h < 0.0 {
+            h += 360.0;
+        }
+    }
+    (h, s, l)
 }
 
 fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
