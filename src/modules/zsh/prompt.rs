@@ -40,12 +40,6 @@ impl Prompt {
             .color
             .separation
             .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
-        eprintln!(
-            "{},{}, {}",
-            self.left_separation(),
-            self.right_separation(),
-            self.total_separation()
-        );
         let start_cap = ZshPromptBuilder::new()
             .end_color_bg()
             .color(start_sep_color)

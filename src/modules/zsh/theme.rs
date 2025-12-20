@@ -7,14 +7,23 @@ use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use dialoguer::{Input, Select};
 use std::fmt;
 
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptTheme {
     pub color: PromptColorScheme,
     pub connection: PromptConnection,
     pub separation: PromptSeparation,
-    pub prompt_contents: PromptContents,
+    pub prompt_contents_list: Vec<PromptContents>,
 }
-
+impl Default for PromptTheme {
+    fn default() -> Self {
+        Self {
+            color: PromptColorScheme::default(),
+            connection: PromptConnection::default(),
+            separation: PromptSeparation::default(),
+            prompt_contents_list: vec![PromptContents::default()],
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContents {
     pub left: Vec<PromptContent>,
