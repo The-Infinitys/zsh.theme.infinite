@@ -63,7 +63,6 @@ pub fn uninstall() {
                 if install_paths.is_oh_my_zsh_install {
                     // Oh My Zsh uninstallation
                     let theme_name = install_paths.theme_file_path.file_stem().unwrap().to_string_lossy();
-                    let theme_setting = format!("ZSH_THEME=\"{}\"", theme_name);
                     let zsh_root_path_str = paths::get_oh_my_zsh_root().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
                     let zsh_custom_path_str = paths::get_oh_my_zsh_custom_theme_dir().map(|p| p.parent().unwrap().to_string_lossy().to_string()).unwrap_or_default();
                     

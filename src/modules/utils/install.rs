@@ -104,25 +104,25 @@ pub fn install() {
                 let source_oh_my_zsh = "source $ZSH/oh-my-zsh.sh";
                 let theme_setting = format!("ZSH_THEME=\"{}\"", install_paths.theme_file_path.file_stem().unwrap().to_string_lossy());
 
-
-                let mut modified = false;
+                
+                let mut _modified = false;
 
                 // Add ZSH variable if not present
                 if !zshrc_content.contains(&zsh_var) {
                     zshrc_content.push_str(&format!("\n{}", zsh_var));
-                    modified = true;
+                    _modified = true;
                 }
 
                 // Add ZSH_CUSTOM variable if not present
                 if !zshrc_content.contains(&zsh_custom_var) {
                     zshrc_content.push_str(&format!("\n{}", zsh_custom_var));
-                    modified = true;
+                    _modified = true;
                 }
 
                 // Add source oh-my-zsh.sh if not present
                 if !zshrc_content.contains(source_oh_my_zsh) {
                     zshrc_content.push_str(&format!("\n{}", source_oh_my_zsh));
-                    modified = true;
+                    _modified = true;
                 }
                 
                 // Set ZSH_THEME
@@ -130,14 +130,14 @@ pub fn install() {
                 let theme_regex = regex::Regex::new(r"(?m)^ZSH_THEME=.*$").unwrap();
                 if theme_regex.is_match(&zshrc_content) {
                     zshrc_content = theme_regex.replace(&zshrc_content, theme_setting.as_str()).to_string();
-                    modified = true;
+                    _modified = true;
                 } else {
                     zshrc_content.push_str(&format!("\n{}", theme_setting));
-                    modified = true;
+                    _modified = true;
                 }
 
 
-                if modified {
+                if _modified {
                     match fs::write(&user_zshrc_path, zshrc_content) {
                         Ok(_) => println!("~/.zshrc updated for Oh My Zsh theme."),
                         Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
