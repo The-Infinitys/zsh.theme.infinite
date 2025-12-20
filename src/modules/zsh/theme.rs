@@ -104,43 +104,40 @@ pub struct PromptColorScheme {
 #[serde(rename_all = "camelCase")]
 pub enum SeparationColor {
     Single(#[serde(with = "named_color_serde")] NamedColor),
-    // Rainbowをf32ではなくNamedColorで保持するように変更
     Rainbow(#[serde(with = "named_color_serde")] NamedColor),
     // Gradientにカスタムシリアライザを適用
     #[serde(
         serialize_with = "serialize_gradient",
         deserialize_with = "deserialize_gradient"
     )]
-    Gradient(Vec<(NamedColor, f32)>),
+    Gradient(Vec<((u8, u8, u8), f32)>),
 }
 
 // --- Gradient用のカスタムシリアライズ/デシリアライズ ---
 
-fn serialize_gradient<S>(stops: &Vec<(NamedColor, f32)>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_gradient<S>(stops: &Vec<((u8, u8, u8), f32)>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     use serde::ser::SerializeSeq;
     let mut seq = serializer.serialize_seq(Some(stops.len()))?;
-    for (color, pos) in stops {
-        // 既存の named_color_serde を利用して文字列化
-        // 内部で serialize_to_str が提供されている前提、もしくは一時的なラッパーを使用
-        let color_str = format!("{:?}", color); // ここは環境に合わせて調整してください
-        seq.serialize_element(&format!("{}:{}", color_str, pos))?;
+    for (rgb, pos) in stops {
+        // フルカラー形式をHex文字列に変換して保存
+        seq.serialize_element(&format!("#{:02X}{:02X}{:02X}:{}", rgb.0, rgb.1, rgb.2, pos))?;
     }
     seq.end()
 }
 
-fn deserialize_gradient<'de, D>(deserializer: D) -> Result<Vec<(NamedColor, f32)>, D::Error>
+fn deserialize_gradient<'de, D>(deserializer: D) -> Result<Vec<((u8, u8, u8), f32)>, D::Error>
 where
     D: Deserializer<'de>,
 {
     struct GradientVisitor;
     impl<'de> Visitor<'de> for GradientVisitor {
-        type Value = Vec<(NamedColor, f32)>;
+        type Value = Vec<((u8, u8, u8), f32)>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("a sequence of 'color:stop' strings")
+            formatter.write_str("a sequence of '#RRGGBB:stop' strings")
         }
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -150,11 +147,14 @@ where
             let mut stops = Vec::new();
             while let Some(s) = seq.next_element::<String>()? {
                 let parts: Vec<&str> = s.split(':').collect();
-                if parts.len() == 2 {
-                    let color = named_color_serde::deserialize_from_str(parts[0])
-                        .map_err(de::Error::custom)?;
+                if parts.len() == 2 && parts[0].starts_with('#') && parts[0].len() == 7 {
+                    let r = u8::from_str_radix(&parts[0][1..3], 16).map_err(de::Error::custom)?;
+                    let g = u8::from_str_radix(&parts[0][3..5], 16).map_err(de::Error::custom)?;
+                    let b = u8::from_str_radix(&parts[0][5..7], 16).map_err(de::Error::custom)?;
                     let pos = parts[1].parse::<f32>().map_err(de::Error::custom)?;
-                    stops.push((color, pos));
+                    stops.push(((r, g, b), pos));
+                } else {
+                    return Err(de::Error::custom(format!("Invalid gradient stop format: {}", s)));
                 }
             }
             Ok(stops)
@@ -184,7 +184,7 @@ impl SeparationColor {
                     return NamedColor::White;
                 }
                 if stops.len() == 1 {
-                    return stops[0].0;
+                    return NamedColor::FullColor(stops[0].0);
                 }
 
                 let mut sorted_stops = stops.clone();
@@ -192,39 +192,32 @@ impl SeparationColor {
 
                 let first = &sorted_stops[0];
                 if progress <= first.1 {
-                    return first.0;
+                    return NamedColor::FullColor(first.0);
                 }
                 let last = &sorted_stops[sorted_stops.len() - 1];
                 if progress >= last.1 {
-                    return last.0;
+                    return NamedColor::FullColor(last.0);
                 }
 
                 for i in 0..sorted_stops.len() - 1 {
-                    let (c1, p1) = &sorted_stops[i];
-                    let (c2, p2) = &sorted_stops[i + 1];
+                    let (c1_rgb, p1) = &sorted_stops[i];
+                    let (c2_rgb, p2) = &sorted_stops[i + 1];
                     if progress >= *p1 && progress <= *p2 {
                         let t = (progress - p1) / (p2 - p1);
-                        return lerp_named_color(c1, c2, t);
+                        return NamedColor::FullColor(lerp_rgb_color(*c1_rgb, *c2_rgb, t));
                     }
                 }
-                stops[0].0
+                NamedColor::FullColor(stops[0].0)
             }
         }
     }
 }
 
-fn lerp_named_color(c1: &NamedColor, c2: &NamedColor, t: f32) -> NamedColor {
-    let get_rgb = |c: &NamedColor| match c {
-        NamedColor::FullColor(rgb) => *rgb,
-        _ => (128, 128, 128),
-    };
-    let rgb1 = get_rgb(c1);
-    let rgb2 = get_rgb(c2);
-
+fn lerp_rgb_color(rgb1: (u8, u8, u8), rgb2: (u8, u8, u8), t: f32) -> (u8, u8, u8) {
     let r = (rgb1.0 as f32 + (rgb2.0 as f32 - rgb1.0 as f32) * t) as u8;
     let g = (rgb1.1 as f32 + (rgb2.1 as f32 - rgb1.1 as f32) * t) as u8;
     let b = (rgb1.2 as f32 + (rgb2.2 as f32 - rgb1.2 as f32) * t) as u8;
-    NamedColor::FullColor((r, g, b))
+    (r, g, b)
 }
 
 fn rgb_to_hsl(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
@@ -321,6 +314,27 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
         .unwrap_or_else(|_| *default_color)
 }
 
+// 新しい関数: フルカラーのRGB値をプロンプトで取得
+fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8, u8, u8) {
+    Input::new()
+        .with_prompt(prompt_text)
+        .default(format!("#{:02X}{:02X}{:02X}", default_rgb.0, default_rgb.1, default_rgb.2))
+        .interact_text()
+        .map(|s| {
+            if s.starts_with('#') && s.len() == 7 {
+                if let (Ok(r), Ok(g), Ok(b)) = (
+                    u8::from_str_radix(&s[1..3], 16),
+                    u8::from_str_radix(&s[3..5], 16),
+                    u8::from_str_radix(&s[5..7], 16),
+                ) {
+                    return (r, g, b);
+                }
+            }
+            default_rgb
+        })
+        .unwrap_or(default_rgb)
+}
+
 fn configure_colors(theme: &mut PromptTheme) {
     println!("\n--- Configure Colors ---");
 
@@ -351,9 +365,9 @@ fn configure_colors(theme: &mut PromptTheme) {
             SeparationColor::Rainbow(color)
         }
         2 => {
-            let c1 = prompt_for_named_color("Start Color", &NamedColor::Cyan);
-            let c2 = prompt_for_named_color("End Color", &NamedColor::Blue);
-            SeparationColor::Gradient(vec![(c1, 0.0), (c2, 1.0)])
+            let c1_rgb = prompt_for_rgb_color("Gradient Start Color (Hex)", (0, 255, 255)); // Cyan
+            let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255));   // Blue
+            SeparationColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
         }
         _ => unreachable!(),
     };
@@ -441,3 +455,4 @@ pub async fn main() {
         }
     }
 }
+
