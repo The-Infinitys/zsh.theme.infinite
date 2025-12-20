@@ -6,9 +6,9 @@ use std::{
     path::PathBuf,
 };
 
-const QUALIFIER: &str = "com";
-const ORGANIZATION: &str = "infinite-zsh";
-const APPLICATION: &str = "infinite";
+const QUALIFIER: &str = "org";
+const ORGANIZATION: &str = "infinite";
+const APPLICATION: &str = "zsh-infinite";
 const THEME_FILE_NAME: &str = "theme.yaml";
 
 fn get_theme_file_path() -> Option<PathBuf> {

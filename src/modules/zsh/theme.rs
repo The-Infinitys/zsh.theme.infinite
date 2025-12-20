@@ -5,6 +5,7 @@ mod named_color_serde; // 既存のファイルをそのまま使用
 use super::theme_manager;
 use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use dialoguer::{Input, Select};
+use dialoguer::theme::ColorfulTheme;
 use std::fmt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -288,6 +289,18 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
     )
 }
 
+fn create_default_rainbow_gradient() -> Vec<((u8, u8, u8), f32)> {
+    vec![
+        ((255, 0, 0), 0.0),      // Red
+        ((255, 127, 0), 0.16),   // Orange
+        ((255, 255, 0), 0.32),   // Yellow
+        ((0, 255, 0), 0.48),     // Green
+        ((0, 0, 255), 0.64),     // Blue
+        ((75, 0, 130), 0.80),    // Indigo
+        ((148, 0, 211), 1.0),    // Violet
+    ]
+}
+
 impl Default for PromptColorScheme {
     fn default() -> Self {
         Self {
@@ -315,7 +328,7 @@ impl<'a> fmt::Display for DisplayNamedColor<'a> {
 }
 
 fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> NamedColor {
-    Input::new()
+    Input::with_theme(&ColorfulTheme::default())
         .with_prompt(prompt_text)
         .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
@@ -325,7 +338,7 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
 
 // 新しい関数: フルカラーのRGB値をプロンプトで取得
 fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8, u8, u8) {
-    Input::new()
+    Input::with_theme(&ColorfulTheme::default())
         .with_prompt(prompt_text)
         .default(format!(
             "#{:02X}{:02X}{:02X}",
@@ -355,15 +368,21 @@ fn configure_colors(theme: &mut PromptTheme) {
     theme.color.pc = prompt_for_named_color("Primary color (pc)", &theme.color.pc);
     theme.color.sc = prompt_for_named_color("Secondary color (sc)", &theme.color.sc);
 
-    let options = ["Single Color", "Rainbow", "Gradient"];
-    let selection = Select::new()
+    let options = ["Single Color", "Rainbow", "Default Rainbow Gradient", "Custom Gradient"];
+    let default_selection = match &theme.color.separation {
+        SeparationColor::Single(_) => 0,
+        SeparationColor::Rainbow(_) => 1,
+        // Default Rainbow Gradient と Custom Gradient を区別するために、既存のグラデーションが
+        // デフォルトの虹色グラデーションと一致するかどうかを簡易的に判定するか、
+        // または単に Custom Gradient にフォールバックさせるかを検討。
+        // ここでは簡単に Custom Gradient にフォールバックさせます。
+        SeparationColor::Gradient(_) => 3, // Custom Gradient に対応
+    };
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose separation color type")
         .items(options)
-        .default(match theme.color.separation {
-            SeparationColor::Single(_) => 0,
-            SeparationColor::Rainbow(_) => 1,
-            SeparationColor::Gradient(_) => 2,
-        })
+        .default(default_selection)
         .interact()
         .unwrap();
 
@@ -376,7 +395,10 @@ fn configure_colors(theme: &mut PromptTheme) {
             );
             SeparationColor::Rainbow(color)
         }
-        2 => {
+        2 => { // Default Rainbow Gradient
+            SeparationColor::Gradient(create_default_rainbow_gradient())
+        }
+        3 => { // Custom Gradient (Existing 2-point gradient)
             let c1_rgb = prompt_for_rgb_color("Gradient Start Color (Hex)", (0, 255, 255)); // Cyan
             let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255)); // Blue
             SeparationColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
@@ -390,9 +412,18 @@ fn configure_connection(theme: &mut PromptTheme) {
     let options = [
         PromptConnection::None,
         PromptConnection::Line,
+        PromptConnection::Double,
+        PromptConnection::Bold,
+        PromptConnection::Dashed,
+        PromptConnection::Dotted,
         PromptConnection::Dot,
+        PromptConnection::Bullet,
+        PromptConnection::Wave,
+        PromptConnection::ZigZag,
+        PromptConnection::Bar,
+        PromptConnection::Gradient,
     ];
-    let selection = Select::new()
+    let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose style")
         .items(
             options
@@ -417,10 +448,15 @@ fn configure_separation(theme: &mut PromptTheme) {
         PromptSeparation::Block,
         PromptSeparation::Sharp,
         PromptSeparation::Slash,
+        PromptSeparation::BackSlash,
         PromptSeparation::Round,
         PromptSeparation::Blur,
+        PromptSeparation::Flame,
+        PromptSeparation::Pixel,
+        PromptSeparation::Wave,
+        PromptSeparation::Lego,
     ];
-    let selection = Select::new()
+    let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose style")
         .items(
             options
@@ -449,7 +485,7 @@ pub async fn main() {
             "Configure Separators",
             "Save and Exit",
         ];
-        let selection = Select::new()
+        let selection = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Main Menu")
             .items(options)
             .interact()

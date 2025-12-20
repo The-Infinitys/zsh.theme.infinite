@@ -1,9 +1,9 @@
 use directories::ProjectDirs;
 use std::{io, path::PathBuf};
 
-pub const QUALIFIER: &str = "com";
-pub const ORGANIZATION: &str = "infinite-zsh";
-pub const APPLICATION: &str = "infinite";
+pub const QUALIFIER: &str = "org";
+pub const ORGANIZATION: &str = "infinite";
+pub const APPLICATION: &str = "zsh-infiniteinfinite";
 pub const ZSH_THEME_FILE_NAME: &str = "infinite.zsh-theme";
 pub const ZSH_RC_SNIPPET_FILE_NAME: &str = "infinite_zshrc_snippet"; // To be sourced by user's .zshrc
 
