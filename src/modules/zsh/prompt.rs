@@ -158,22 +158,38 @@ pub struct Prompt {
 }
 #[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptConnection {
-    None,
     #[default]
-    Line,
-    Dot,
+    None, // 空白
+    Line,     // 標準の細線 (─)
+    Double,   // 二重線 (═)
+    Bold,     // 太線 (━)
+    Dashed,   // 破線 (╌)
+    Dotted,   // 点線 (┄)
+    Dot,      // 中点 (·)
+    Bullet,   // 弾丸 (•)
+    Wave,     // 波線 (〜)
+    ZigZag,   // ギザギザ (≈)
+    Bar,      // 太いバー (█)
+    Gradient, // グラデーション (░▒▓)
 }
+
 impl fmt::Display for PromptConnection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::None => " ",
-                Self::Line => "─",
-                Self::Dot => "·",
-            }
-        )
+        let s = match self {
+            Self::None => " ",
+            Self::Line => "─",
+            Self::Double => "═",
+            Self::Bold => "━",
+            Self::Dashed => "╌",
+            Self::Dotted => "┄",
+            Self::Dot => "·",
+            Self::Bullet => "•",
+            Self::Wave => "〜",
+            Self::ZigZag => "≈",
+            Self::Bar => "█",
+            Self::Gradient => "▒",
+        };
+        write!(f, "{}", s)
     }
 }
 struct PromptCurveLine {
@@ -181,29 +197,90 @@ struct PromptCurveLine {
     top_right: String,
     bottom_left: String,
     bottom_right: String,
+    horizontal: String, // 横線 ─
+    #[allow(unused)]
+    vertical: String, // 縦線 │
+    cross_left: String, // 縦線から右に枝分かれ ├
+    cross_right: String,
 }
 impl Default for PromptCurveLine {
     fn default() -> Self {
-        let top_left = "╭".to_string();
-        let top_right = "╮".to_string();
-        let bottom_left = "╰".to_string();
-        let bottom_right = "╯".to_string();
         Self {
-            top_left,
-            top_right,
-            bottom_left,
-            bottom_right,
+            top_left: "╭".to_string(),
+            top_right: "╮".to_string(),
+            bottom_left: "╰".to_string(),
+            bottom_right: "╯".to_string(),
+            horizontal: "─".to_string(),
+            vertical: "│".to_string(),
+            cross_left: "├".to_string(),
+            cross_right: "┤".to_string(),
         }
     }
 }
+impl From<PromptConnection> for PromptCurveLine {
+    fn from(conn: PromptConnection) -> Self {
+        match conn {
+            // 二重線
+            PromptConnection::Double => Self {
+                top_left: "╔".to_string(),
+                top_right: "╗".to_string(),
+                bottom_left: "╚".to_string(),
+                bottom_right: "╝".to_string(),
+                horizontal: "═".to_string(),
+                vertical: "║".to_string(),
+                cross_left: "╠".to_string(),
+                cross_right: "╣".to_string(),
+            },
+            // 太線
+            PromptConnection::Bold | PromptConnection::Bar => Self {
+                top_left: "┏".to_string(),
+                top_right: "┓".to_string(),
+                bottom_left: "┗".to_string(),
+                bottom_right: "┛".to_string(),
+                horizontal: "━".to_string(),
+                vertical: "┃".to_string(),
+                cross_left: "┣".to_string(),
+                cross_right: "┫".to_string(),
+            },
+            // 標準の直角
+            PromptConnection::Line | PromptConnection::Dashed | PromptConnection::Dotted => Self {
+                top_left: "┌".to_string(),
+                top_right: "┐".to_string(),
+                bottom_left: "└".to_string(),
+                bottom_right: "┘".to_string(),
+                horizontal: "─".to_string(),
+                vertical: "│".to_string(),
+                cross_left: "├".to_string(),
+                cross_right: "┤".to_string(),
+            },
+            // 丸角（デフォルト）
+            _ => Self {
+                top_left: "╭".to_string(),
+                top_right: "╮".to_string(),
+                bottom_left: "╰".to_string(),
+                bottom_right: "╯".to_string(),
+                horizontal: conn.to_string(),
+                vertical: "│".to_string(),
+                cross_left: "├".to_string(),
+                cross_right: "┤".to_string(),
+            },
+        }
+    }
+}
+
 #[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptSeparation {
     Block,
     #[default]
-    Sharp,
-    Slash,
-    Round,
-    Blur,
+    Sharp, // 三角形 (Powerline Default)
+    Slash,     // 斜線
+    BackSlash, // 逆斜線
+    Round,     // 半円
+    Blur,      // グラデーション
+    Flame,     // 炎
+    Pixel,     // ドット/ピクセル
+    Wave,      // 波形
+    Lego,      // レゴブロック風
 }
 pub struct PromptSeparationBox {
     pub left: String,
@@ -242,20 +319,30 @@ impl From<PromptSeparation> for PromptSeparationLine {
 impl PromptSeparation {
     pub fn sep_box(&self) -> PromptSeparationBox {
         match self {
-            Self::Slash => PromptSeparationBox::new("", ""),
             Self::Block => PromptSeparationBox::new(" ", " "),
-            Self::Sharp => PromptSeparationBox::new("", ""),
-            Self::Round => PromptSeparationBox::new("", ""),
-            Self::Blur => PromptSeparationBox::new("▓▒░", "░▒▓"),
+            Self::Sharp => PromptSeparationBox::new("", ""), // Powerline三角形
+            Self::Slash => PromptSeparationBox::new("", ""), // 斜線
+            Self::BackSlash => PromptSeparationBox::new("", ""), // 逆斜線
+            Self::Round => PromptSeparationBox::new("", ""), // 半円
+            Self::Blur => PromptSeparationBox::new("▓▒░", "░▒▓"), // グラデ
+            Self::Flame => PromptSeparationBox::new("", ""), // 炎
+            Self::Pixel => PromptSeparationBox::new("", ""), // ピクセル
+            Self::Wave => PromptSeparationBox::new("", ""),  // 波
+            Self::Lego => PromptSeparationBox::new("", ""),  // (代替)
         }
     }
     pub fn sep_line(&self) -> PromptSeparationLine {
         match self {
-            Self::Slash => PromptSeparationLine::new("╱", "╱"),
             Self::Block => PromptSeparationLine::new("|", "|"),
-            Self::Sharp => PromptSeparationLine::new("", ""),
-            Self::Round => PromptSeparationLine::new("", ""),
-            Self::Blur => PromptSeparationLine::new("▓▒░", "░▒▓"),
+            Self::Sharp => PromptSeparationLine::new("", ""), // 細い三角形
+            Self::Slash => PromptSeparationLine::new("╱", "╱"), // 細い斜線
+            Self::BackSlash => PromptSeparationLine::new("╲", "╲"), // 細い逆斜線
+            Self::Round => PromptSeparationLine::new("", ""), // 細い半円
+            Self::Blur => PromptSeparationLine::new("░", "░"),  // 薄い網掛け
+            Self::Flame => PromptSeparationLine::new("", ""), // 細い炎
+            Self::Pixel => PromptSeparationLine::new("", ""), // 細いピクセル
+            Self::Wave => PromptSeparationLine::new("", ""),  // 細い波
+            Self::Lego => PromptSeparationLine::new("", ""),  // (代替)
         }
     }
 }

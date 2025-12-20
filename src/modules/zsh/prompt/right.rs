@@ -6,9 +6,9 @@ use crate::zsh::{
 };
 
 pub async fn right() {
-    let curved_lines = PromptCurveLine::default();
     let l = PromptConnection::Line.to_string();
     let theme = theme_manager::load_theme();
+    let curved_lines = PromptCurveLine::from(theme.connection);
     let prompt = ZshPromptBuilder::new()
         .color(theme.color.sc)
         .str(&l)
