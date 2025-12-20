@@ -8,7 +8,7 @@ use std::fmt;
 pub use transient::transient;
 use zsh_seq::ZshPromptBuilder;
 
-use crate::zsh::theme::prompt_theme::PromptTheme;
+use crate::zsh::theme::{color_scheme::AccentWhich, prompt_theme::PromptTheme};
 
 impl Prompt {
     fn left_separation(&self) -> usize {
@@ -34,7 +34,7 @@ impl Prompt {
     pub fn add_right(&mut self, content: &str) {
         self.right.push(content.to_string());
     }
-    pub fn render_left(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+    fn render_left_fg(&self, theme: &PromptTheme) -> ZshPromptBuilder {
         let start_sep_color = theme.color.accent.get(0.0);
         let bg_color = theme.color.bg;
         let end_sep_color = theme
@@ -82,10 +82,65 @@ impl Prompt {
                 }
             });
         builder = builder.connect(end_cap);
-
         builder
     }
-    pub fn render_right(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+    fn render_left_bg(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        let start_sep_color = theme.color.accent.get(0.0);
+        let bg_color = theme.color.bg;
+        let end_sep_color = theme
+            .color
+            .accent
+            .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
+        let start_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .color(start_sep_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .color_bg(start_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .end_color_bg();
+        let end_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .end_color()
+            .color_bg(end_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color()
+            .end_color_bg()
+            .color(end_sep_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color();
+        let mut builder = ZshPromptBuilder::new().connect(start_cap);
+        builder = self
+            .left
+            .iter()
+            .enumerate()
+            .fold(builder, |b, (i, content)| {
+                let b = b.end_color().color_bg(bg_color).str(content).end_color();
+                if i == self.left.len() - 1 {
+                    b
+                } else {
+                    b.color(
+                        theme
+                            .color
+                            .accent
+                            .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
+                    )
+                    .str(&theme.separation.sep_line().left)
+                }
+            });
+        builder = builder.connect(end_cap);
+        builder
+    }
+    pub fn render_left(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        match theme.color.accent_which {
+            AccentWhich::ForeGround => self.render_left_fg(theme),
+            AccentWhich::BackGround => self.render_left_bg(theme),
+        }
+    }
+    pub fn render_right_fg(&self, theme: &PromptTheme) -> ZshPromptBuilder {
         if self.right.is_empty() {
             return ZshPromptBuilder::new();
         }
@@ -149,6 +204,77 @@ impl Prompt {
             });
 
         builder.connect(end_cap)
+    }
+    pub fn render_right_bg(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        if self.right.is_empty() {
+            return ZshPromptBuilder::new();
+        }
+
+        let bg_color = theme.color.bg;
+        // 右側の開始地点（左端）のセパレーター色
+        let start_sep_color = theme
+            .color
+            .accent
+            .get(1.0 - self.right_separation() as f32 / (self.total_separation() + 1) as f32);
+        // 右側の終了地点（右端）のセパレーター色
+        let end_sep_color = theme
+            .color
+            .accent
+            .get(1.0 - 1.0 / (self.total_separation() + 1) as f32);
+
+        // 右プロンプトの開始キャップ（左側の境界）
+        let start_cap = ZshPromptBuilder::new()
+            .color(start_sep_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color()
+            .color_bg(start_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().right)
+            .end_color();
+
+        // 右プロンプトの終了キャップ（右端の境界）
+        let end_cap = ZshPromptBuilder::new()
+            .end_color_bg()
+            .color_bg(end_sep_color)
+            .color(bg_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color_bg()
+            .end_color()
+            .color(end_sep_color)
+            .str(&theme.separation.sep_box().left)
+            .end_color();
+
+        let mut builder = ZshPromptBuilder::new().connect(start_cap);
+
+        // fold を使用して右側の要素を結合
+        builder = self
+            .right
+            .iter()
+            .enumerate()
+            .fold(builder, |b, (i, content)| {
+                let b = b.color_bg(bg_color).str(content);
+
+                // 最後の要素でなければセパレーターを追加
+                if i == self.right.len() - 1 {
+                    b
+                } else {
+                    // 色の計算位置を右側のオフセットに合わせる
+                    let color_pos = (self.left_separation() + i + 2) as f32
+                        / (self.total_separation() + 1) as f32;
+                    b.color(theme.color.accent.get(color_pos))
+                        .str(&theme.separation.sep_line().right) // 右用セパレーター
+                        .end_color()
+                }
+                .end_color_bg()
+            });
+
+        builder.connect(end_cap)
+    }
+    pub fn render_right(&self, theme: &PromptTheme) -> ZshPromptBuilder {
+        match theme.color.accent_which {
+            AccentWhich::ForeGround => self.render_right_fg(theme),
+            AccentWhich::BackGround => self.render_right_bg(theme),
+        }
     }
 }
 

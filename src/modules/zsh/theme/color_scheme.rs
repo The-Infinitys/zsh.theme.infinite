@@ -17,7 +17,7 @@ pub struct PromptColorScheme {
     pub accent: AccentColor,
     pub accent_which: AccentWhich,
 }
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
 pub enum AccentWhich {
     #[default]
     ForeGround,
