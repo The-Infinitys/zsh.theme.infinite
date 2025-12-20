@@ -67,8 +67,7 @@ pub fn save_theme(theme: &PromptTheme) -> io::Result<()> {
             .expect("Theme file path should have a parent directory");
         fs::create_dir_all(config_dir)?;
 
-        let content = serde_yaml::to_string(theme)
-            .map_err(|e| io::Error::other(e.to_string()))?;
+        let content = serde_yaml::to_string(theme).map_err(|e| io::Error::other(e.to_string()))?;
 
         let mut file = fs::File::create(&theme_file_path)?;
         file.write_all(content.as_bytes())?;

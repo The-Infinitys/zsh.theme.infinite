@@ -4,8 +4,8 @@ use zsh_seq::NamedColor;
 mod named_color_serde; // 既存のファイルをそのまま使用
 use super::theme_manager;
 use crate::zsh::prompt::{PromptConnection, PromptSeparation};
-use dialoguer::{Input, Select};
 use dialoguer::theme::ColorfulTheme;
+use dialoguer::{Input, Select};
 use std::fmt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -291,13 +291,13 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
 
 fn create_default_rainbow_gradient() -> Vec<((u8, u8, u8), f32)> {
     vec![
-        ((255, 0, 0), 0.0),      // Red
-        ((255, 127, 0), 0.16),   // Orange
-        ((255, 255, 0), 0.32),   // Yellow
-        ((0, 255, 0), 0.48),     // Green
-        ((0, 0, 255), 0.64),     // Blue
-        ((75, 0, 130), 0.80),    // Indigo
-        ((148, 0, 211), 1.0),    // Violet
+        ((255, 0, 0), 0.0),    // Red
+        ((255, 127, 0), 0.16), // Orange
+        ((255, 255, 0), 0.32), // Yellow
+        ((0, 255, 0), 0.48),   // Green
+        ((0, 0, 255), 0.64),   // Blue
+        ((75, 0, 130), 0.80),  // Indigo
+        ((148, 0, 211), 1.0),  // Violet
     ]
 }
 
@@ -368,7 +368,12 @@ fn configure_colors(theme: &mut PromptTheme) {
     theme.color.pc = prompt_for_named_color("Primary color (pc)", &theme.color.pc);
     theme.color.sc = prompt_for_named_color("Secondary color (sc)", &theme.color.sc);
 
-    let options = ["Single Color", "Rainbow", "Default Rainbow Gradient", "Custom Gradient"];
+    let options = [
+        "Single Color",
+        "Rainbow",
+        "Default Rainbow Gradient",
+        "Custom Gradient",
+    ];
     let default_selection = match &theme.color.separation {
         SeparationColor::Single(_) => 0,
         SeparationColor::Rainbow(_) => 1,
@@ -395,10 +400,12 @@ fn configure_colors(theme: &mut PromptTheme) {
             );
             SeparationColor::Rainbow(color)
         }
-        2 => { // Default Rainbow Gradient
+        2 => {
+            // Default Rainbow Gradient
             SeparationColor::Gradient(create_default_rainbow_gradient())
         }
-        3 => { // Custom Gradient (Existing 2-point gradient)
+        3 => {
+            // Custom Gradient (Existing 2-point gradient)
             let c1_rgb = prompt_for_rgb_color("Gradient Start Color (Hex)", (0, 255, 255)); // Cyan
             let c2_rgb = prompt_for_rgb_color("Gradient End Color (Hex)", (0, 0, 255)); // Blue
             SeparationColor::Gradient(vec![(c1_rgb, 0.0), (c2_rgb, 1.0)])
