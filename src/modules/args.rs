@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use std::cmp::Ordering;
 
 #[derive(Parser)]
-#[command(name = "my_tool", version, about = "CLI tool with nested subcommands")]
+#[command(name = "Zsh Infinite", version, about = "CLI tool with nested subcommands")]
 pub struct Args {
     /// Show verbose output
     #[arg(short, long, global = true)]
