@@ -325,11 +325,11 @@ impl Prompt {
             if i < len - 1 {
                 if seps.bold_separation {
                     builder = builder
-                        .color(sep_color)
-                        .color_bg(bg_color)
-                        .str(&seps.mid_separator.sep_box().right)
-                        .color_bg(sep_color)
                         .color(bg_color)
+                        .color_bg(sep_color)
+                        .str(&seps.mid_separator.sep_box().right)
+                        .color_bg(bg_color)
+                        .color(sep_color)
                         .str(&seps.mid_separator.sep_box().right)
                         .end_color()
                         .end_color_bg();
