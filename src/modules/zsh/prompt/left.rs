@@ -67,8 +67,10 @@ pub async fn left() {
         let right_content = prompt.render_right(prompt_contents);
 
         let terminal_width = terminal::size().map(|(w, _)| w).unwrap_or(80) as usize;
-        let left_width = UnicodeWidthStr::width(left_content.text().as_str());
-        let right_width = UnicodeWidthStr::width(right_content.text().as_str());
+        let left_width =
+            UnicodeWidthStr::width(strip_ansi_codes(left_content.text().as_str()).as_str());
+        let right_width =
+            UnicodeWidthStr::width(strip_ansi_codes(right_content.text().as_str()).as_str());
         let conn_line_width = UnicodeWidthStr::width(curved_lines.horizontal.as_str());
         let side_decor_width =
             UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
@@ -120,4 +122,9 @@ pub async fn left() {
         .str(" ")
         .end_color();
     print!("{}", end.build())
+}
+
+fn strip_ansi_codes(text: &str) -> String {
+    let re = regex::Regex::new(r"\x1b\[[0-9;]*[mK]").unwrap();
+    re.replace_all(text, "").to_string()
 }
