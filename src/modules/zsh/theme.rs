@@ -77,7 +77,7 @@ async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
             "Configure Colors",
             "Configure Connection",
             "Configure Separators",
-            "Configure Left Prompt Content", // 新しいオプション
+            "Configure Left Prompt Content",  // 新しいオプション
             "Configure Right Prompt Content", // 新しいオプション
             "Back to Main Menu",
         ];

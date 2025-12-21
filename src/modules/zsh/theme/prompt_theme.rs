@@ -4,7 +4,7 @@ use tokio::process::Command;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 use super::color_scheme::PromptColorScheme;
- // 変更
+// 変更
 use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
@@ -117,9 +117,17 @@ pub struct PromptContent {
     pub cmd: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
-    #[serde(with = "super::named_color_serde_option", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        with = "super::named_color_serde_option",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub fg_color: Option<NamedColor>,
-    #[serde(with = "super::named_color_serde_option", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        with = "super::named_color_serde_option",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub bg_color: Option<NamedColor>,
 }
 

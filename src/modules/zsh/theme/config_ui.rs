@@ -5,7 +5,7 @@ use zsh_seq::NamedColor;
 
 use super::gradient::create_default_rainbow_gradient;
 use super::named_color_serde;
-use super::prompt_theme::{PromptContents, PromptContent, PromptSegmentSeparators}; // PromptSegmentSeparatorsとPromptContentをインポート
+use super::prompt_theme::{PromptContent, PromptContents, PromptSegmentSeparators}; // PromptSegmentSeparatorsとPromptContentをインポート
 use crate::zsh::prompt::{PromptConnection, PromptSeparation}; // crateルートからのパス
 
 // DisplayNamedColor
@@ -44,9 +44,7 @@ pub fn prompt_for_named_color(
     if let Ok(color) = named_color_serde::deserialize_from_str(&input) {
         Some(color)
     } else {
-        println!(
-            "Invalid color format. Keeping default or setting to None if default was None."
-        );
+        println!("Invalid color format. Keeping default or setting to None if default was None.");
         default_color.cloned() // 不正な入力の場合はデフォルト値を返す
     }
 }
@@ -142,10 +140,14 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
 pub fn configure_prompt_content_colors(prompt_content: &mut PromptContent) {
     println!("\n--- Configure Prompt Content Colors ---");
 
-    prompt_content.fg_color =
-        prompt_for_named_color("Foreground color (enter 'None' to clear)", prompt_content.fg_color.as_ref());
-    prompt_content.bg_color =
-        prompt_for_named_color("Background color (enter 'None' to clear)", prompt_content.bg_color.as_ref());
+    prompt_content.fg_color = prompt_for_named_color(
+        "Foreground color (enter 'None' to clear)",
+        prompt_content.fg_color.as_ref(),
+    );
+    prompt_content.bg_color = prompt_for_named_color(
+        "Background color (enter 'None' to clear)",
+        prompt_content.bg_color.as_ref(),
+    );
 }
 
 pub fn configure_connection(prompt_contents: &mut PromptContents) {
