@@ -35,94 +35,312 @@ impl Prompt {
         self.right.push(content.to_string());
     }
     fn render_left_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
+        if self.left.is_empty() {
+            return ZshPromptBuilder::new();
+        }
+
         let color_scheme = &prompt_contents.color;
-        let left_separators = &prompt_contents.left_segment_separators;
-        let start_sep_color = color_scheme.accent.get(0.0);
+        let seps = &prompt_contents.left_segment_separators;
         let bg_color = color_scheme.bg;
-        let end_sep_color = color_scheme
-            .accent
-            .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
-        let start_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .color(start_sep_color)
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color()
-            .color_bg(start_sep_color)
-            .color(bg_color)
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color()
-            .end_color_bg();
-        let end_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .end_color()
-            .color_bg(end_sep_color)
-            .color(bg_color)
-            .str(&left_separators.end_separator.sep_box().left)
-            .end_color()
-            .end_color_bg()
-            .color(end_sep_color)
-            .str(&left_separators.end_separator.sep_box().left)
-            .end_color();
-        let mut builder = ZshPromptBuilder::new().connect(start_cap);
-        builder = self
-            .left
-            .iter()
-            .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let b = b.end_color().color_bg(bg_color).str(content).end_color();
-                if i == self.left.len() - 1 {
-                    b
+        let total = (self.total_separation() + 1) as f32;
+
+        let mut builder = ZshPromptBuilder::new();
+
+        // 開始キャップ (edge_cap が有効なら Box を描画)
+        if seps.edge_cap {
+            let start_color = color_scheme.accent.get(0.0);
+            builder = builder
+                .color(start_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .color_bg(start_color)
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .end_color_bg();
+        } else {
+            builder = builder
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color();
+        }
+
+        let len = self.left.len();
+        for (i, content) in self.left.iter().enumerate() {
+            builder = builder.color_bg(bg_color).str(content).end_color_bg();
+            if i < len - 1 {
+                let color_pos = (i + 1) as f32 / total;
+                let sep_color = color_scheme.accent.get(color_pos);
+
+                if seps.bold_separation {
+                    // 太い区切りの場合は背景色を切り替えつつ Box を使用
+                    builder = builder
+                        .color(bg_color)
+                        .color_bg(sep_color)
+                        .str(&seps.mid_separator.sep_box().left)
+                        .color_bg(bg_color)
+                        .color(sep_color)
+                        .str(&seps.mid_separator.sep_box().left)
+                        .end_color()
+                        .end_color_bg();
                 } else {
-                    b.color(
-                        color_scheme
-                            .accent
-                            .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
-                    )
-                    .str(&left_separators.mid_separator.sep_line().left)
+                    // 通常は細線を使用
+                    builder = builder
+                        .color_bg(bg_color)
+                        .color(sep_color)
+                        .str(&seps.mid_separator.sep_line().left)
+                        .end_color()
+                        .end_color_bg();
                 }
-            });
-        builder = builder.connect(end_cap);
+            }
+        }
+
+        // 終了キャップ
+        if seps.edge_cap {
+            let end_color = color_scheme
+                .accent
+                .get(self.left_separation() as f32 / total);
+            builder = builder
+                .color(bg_color)
+                .color_bg(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color_bg()
+                .color(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color();
+        } else {
+            builder = builder
+                .color(bg_color)
+                .end_color_bg()
+                .str(&seps.end_separator.sep_box().left)
+                .end_color();
+        }
+
         builder
     }
+
     fn render_left_bg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         if self.left.is_empty() {
             return ZshPromptBuilder::new();
         }
-        let color_scheme = &prompt_contents.color;
-        let left_separators = &prompt_contents.left_segment_separators;
 
-        let start_cap = ZshPromptBuilder::new()
-            .color(color_scheme.accent.get(0.0))
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color();
-        let content_len = self.left.len();
-        let mut builder = ZshPromptBuilder::new().connect(start_cap);
-        builder = self
-            .left
-            .iter()
-            .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let mut b = b
-                    .end_color()
-                    .color_bg(color_scheme.accent.get(i as f32 / content_len as f32))
-                    .str(content)
-                    .end_color_bg();
-                if i == content_len - 1 {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .end_color_bg()
-                        .str(&left_separators.end_separator.sep_box().left)
-                        .end_color();
+        let color_scheme = &prompt_contents.color;
+        let seps = &prompt_contents.left_segment_separators;
+        let bg_color = color_scheme.bg;
+        let total = (self.total_separation() + 1) as f32;
+        let mut builder = ZshPromptBuilder::new();
+
+        // 開始キャップ
+        if seps.edge_cap {
+            let start_color = color_scheme.accent.get(0.0);
+            builder = builder
+                .color(start_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .color_bg(start_color)
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .end_color_bg();
+        } else {
+            builder = builder
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color();
+        }
+
+        let len = self.left.len();
+        for (i, content) in self.left.iter().enumerate() {
+            let color_pos = (i + 1) as f32 / total;
+            let current_color = color_scheme.accent.get(color_pos);
+
+            builder = builder.color_bg(current_color).str(content).end_color_bg();
+
+            if i < len - 1 {
+                let next_color_pos = (i + 2) as f32 / total;
+                let next_color = color_scheme.accent.get(next_color_pos);
+
+                if seps.bold_separation {
+                    builder = builder
+                        .color(current_color)
+                        .color_bg(next_color)
+                        .str(&seps.mid_separator.sep_box().left)
+                        .end_color()
+                        .end_color_bg();
                 } else {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&left_separators.mid_separator.sep_box().left)
+                    builder = builder
+                        .color_bg(current_color)
+                        .color(bg_color)
+                        .str(&seps.mid_separator.sep_line().left)
                         .end_color()
                         .end_color_bg();
                 }
-                b
-            });
+            }
+        }
+
+        // 終了キャップ
+        if seps.edge_cap {
+            let end_color = color_scheme
+                .accent
+                .get(self.left_separation() as f32 / total);
+            builder = builder
+                .color(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color()
+                .color_bg(end_color)
+                .color(bg_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color()
+                .end_color_bg();
+        } else {
+            let end_color = color_scheme.accent.get(len as f32 / total);
+            builder = builder
+                .color(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color();
+        }
+
+        builder
+    }
+
+    pub fn render_right_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
+        if self.right.is_empty() {
+            return ZshPromptBuilder::new();
+        }
+
+        let color_scheme = &prompt_contents.color;
+        let seps = &prompt_contents.right_segment_separators;
+        let bg_color = color_scheme.bg;
+        let total = (self.total_separation() + 1) as f32;
+        let mut builder = ZshPromptBuilder::new();
+
+        // 右側の開始キャップ
+        if seps.edge_cap {
+            let start_pos = (self.left_separation() + 1) as f32 / total;
+            let start_color = color_scheme.accent.get(start_pos);
+            builder = builder
+                .color(start_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .color_bg(start_color)
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color()
+                .end_color_bg();
+        } else {
+            builder = builder
+                .color(bg_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color();
+        }
+
+        let len = self.right.len();
+        for (i, content) in self.right.iter().enumerate() {
+            builder = builder.color_bg(bg_color).str(content).end_color_bg();
+
+            if i < len - 1 {
+                let color_pos = (self.left_separation() + i + 2) as f32 / total;
+                let sep_color = color_scheme.accent.get(color_pos);
+
+                if seps.bold_separation {
+                    builder = builder
+                        .color(bg_color)
+                        .color_bg(sep_color)
+                        .str(&seps.mid_separator.sep_box().right)
+                        .color_bg(bg_color)
+                        .color(sep_color)
+                        .str(&seps.mid_separator.sep_box().right)
+                        .end_color()
+                        .end_color_bg();
+                } else {
+                    builder = builder
+                        .color_bg(bg_color)
+                        .color(sep_color)
+                        .str(&seps.mid_separator.sep_line().right)
+                        .end_color()
+                        .end_color_bg();
+                }
+            }
+        }
+
+        // 右端のキャップ
+        if seps.edge_cap {
+            let end_color = color_scheme.accent.get(1.0);
+            builder = builder
+                .color(bg_color)
+                .color_bg(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color_bg()
+                .color(end_color)
+                .str(&seps.end_separator.sep_box().left)
+                .end_color();
+        } else {
+            builder = builder
+                .color(bg_color)
+                .end_color_bg()
+                .str(&seps.end_separator.sep_box().left)
+                .end_color();
+        }
+
+        builder
+    }
+
+    pub fn render_right_bg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
+        if self.right.is_empty() {
+            return ZshPromptBuilder::new();
+        }
+
+        let color_scheme = &prompt_contents.color;
+        let seps = &prompt_contents.right_segment_separators;
+        let left_len = self.left.len();
+        let right_len = self.right.len();
+        let total_segments = (left_len + right_len) as f32;
+
+        let mut builder = ZshPromptBuilder::new();
+
+        if seps.edge_cap {
+            let start_color = color_scheme.accent.get(left_len as f32 / total_segments);
+            builder = builder
+                .color(start_color)
+                .str(&seps.start_separator.sep_box().right)
+                .end_color();
+        }
+
+        for (i, content) in self.right.iter().enumerate() {
+            let absolute_index = (left_len + i) as f32;
+            let current_color = color_scheme.accent.get(absolute_index / total_segments);
+
+            builder = builder.color_bg(current_color).str(content);
+
+            if i < right_len - 1 {
+                let next_color = color_scheme
+                    .accent
+                    .get((absolute_index + 1.0) / total_segments);
+                if seps.bold_separation {
+                    builder = builder
+                        .end_color_bg()
+                        .color(current_color)
+                        .color_bg(next_color)
+                        .str(&seps.mid_separator.sep_box().right)
+                        .end_color()
+                        .end_color_bg();
+                } else {
+                    builder = builder
+                        .color(color_scheme.bg)
+                        .str(&seps.mid_separator.sep_line().right)
+                        .end_color();
+                }
+            } else if seps.edge_cap {
+                builder = builder
+                    .end_color_bg()
+                    .color(current_color)
+                    .str(&seps.end_separator.sep_box().left)
+                    .end_color();
+            } else {
+                builder = builder.end_color_bg();
+            }
+        }
+
         builder
     }
     pub fn render_left(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
@@ -134,117 +352,6 @@ impl Prompt {
                 self.render_left_bg(prompt_contents)
             }
         }
-    }
-    pub fn render_right_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
-        if self.right.is_empty() {
-            return ZshPromptBuilder::new();
-        }
-        let color_scheme = &prompt_contents.color;
-        let right_separators = &prompt_contents.right_segment_separators;
-
-        let bg_color = color_scheme.bg;
-        // 右側の開始地点（左端）のセパレーター色
-        let start_sep_color = color_scheme
-            .accent
-            .get(1.0 - self.right_separation() as f32 / (self.total_separation() + 1) as f32);
-        // 右側の終了地点（右端）のセパレーター色
-        let end_sep_color = color_scheme
-            .accent
-            .get(1.0 - 1.0 / (self.total_separation() + 1) as f32);
-
-        // 右プロンプトの開始キャップ（左側の境界）
-        let start_cap = ZshPromptBuilder::new()
-            .color(start_sep_color)
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color()
-            .color_bg(start_sep_color)
-            .color(bg_color)
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color();
-
-        // 右プロンプトの終了キャップ（右端の境界）
-        let end_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .color_bg(end_sep_color)
-            .color(bg_color)
-            .str(&right_separators.end_separator.sep_box().left)
-            .end_color_bg()
-            .end_color()
-            .color(end_sep_color)
-            .str(&right_separators.end_separator.sep_box().left)
-            .end_color();
-
-        let mut builder = ZshPromptBuilder::new().connect(start_cap);
-
-        // fold を使用して右側の要素を結合
-        builder = self
-            .right
-            .iter()
-            .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let b = b.color_bg(bg_color).str(content);
-
-                // 最後の要素でなければセパレーターを追加
-                if i == self.right.len() - 1 {
-                    b
-                } else {
-                    // 色の計算位置を右側のオフセットに合わせる
-                    let color_pos = (self.left_separation() + i + 2) as f32
-                        / (self.total_separation() + 1) as f32;
-                    b.color(color_scheme.accent.get(color_pos))
-                        .str(&right_separators.mid_separator.sep_line().right) // 右用セパレーター
-                        .end_color()
-                }
-                .end_color_bg()
-            });
-
-        builder.connect(end_cap)
-    }
-    pub fn render_right_bg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
-        if self.right.is_empty() {
-            return ZshPromptBuilder::new();
-        }
-        let color_scheme = &prompt_contents.color;
-        let right_separators = &prompt_contents.right_segment_separators;
-
-        let content_len = self.left.len() + self.right.len();
-        let start_cap = ZshPromptBuilder::new()
-            .color(
-                color_scheme
-                    .accent
-                    .get((self.left.len() + 1) as f32 / content_len as f32),
-            )
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color();
-        let mut builder = ZshPromptBuilder::new().connect(start_cap);
-        builder = self
-            .right
-            .iter()
-            .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let i = i + self.left.len() + 1;
-                let mut b = b
-                    .end_color()
-                    .color_bg(color_scheme.accent.get(i as f32 / content_len as f32))
-                    .str(content)
-                    .end_color_bg();
-                if i == content_len {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .end_color_bg()
-                        .str(&right_separators.end_separator.sep_box().left)
-                        .end_color();
-                } else {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&right_separators.mid_separator.sep_box().left)
-                        .end_color()
-                        .end_color_bg();
-                }
-                b
-            });
-        builder
     }
     pub fn render_right(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         match prompt_contents.accent_which {
