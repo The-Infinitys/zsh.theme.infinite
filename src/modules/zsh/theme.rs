@@ -117,12 +117,10 @@ fn configure_prompt_content_list(contents: &mut Vec<PromptContent>, side: &str) 
 
         if selection == options.len() - 1 {
             break; // Back to Prompt Line Menu
+        } else if let Some(prompt_content) = contents.get_mut(selection) {
+            config_ui::configure_prompt_content_colors(prompt_content);
         } else {
-            if let Some(prompt_content) = contents.get_mut(selection) {
-                config_ui::configure_prompt_content_colors(prompt_content);
-            } else {
-                eprintln!("Invalid selection.");
-            }
+            eprintln!("Invalid selection.");
         }
     }
 }
