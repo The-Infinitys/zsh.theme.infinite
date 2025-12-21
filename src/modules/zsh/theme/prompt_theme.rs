@@ -15,6 +15,7 @@ pub enum AccentWhich {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptTheme {
     pub prompt_contents_list: Vec<PromptContents>,
+    #[serde(default)]
     pub transient_color: PromptColorScheme,
 }
 
@@ -46,8 +47,11 @@ impl Default for PromptSegmentSeparators {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContents {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub left: Vec<PromptContent>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub right: Vec<PromptContent>,
+    #[serde(default)]
     pub color: super::color_scheme::PromptColorScheme,
     pub connection: PromptConnection,
     pub left_segment_separators: PromptSegmentSeparators,
@@ -94,8 +98,10 @@ impl Default for PromptContents {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContent {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub envs: Vec<HashMap<String, String>>,
     pub cmd: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
 }
 
