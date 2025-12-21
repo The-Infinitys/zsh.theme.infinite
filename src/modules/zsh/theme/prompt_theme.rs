@@ -33,6 +33,8 @@ pub struct PromptSegmentSeparators {
     pub start_separator: PromptSeparation,
     pub mid_separator: PromptSeparation,
     pub end_separator: PromptSeparation,
+    pub edge_cap: bool,
+    pub bold_separation: bool,
 }
 
 impl Default for PromptSegmentSeparators {
@@ -41,6 +43,8 @@ impl Default for PromptSegmentSeparators {
             start_separator: PromptSeparation::Sharp,
             mid_separator: PromptSeparation::Sharp,
             end_separator: PromptSeparation::Sharp,
+            edge_cap: true,
+            bold_separation: true,
         }
     }
 }
