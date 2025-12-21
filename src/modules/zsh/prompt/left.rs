@@ -1,11 +1,11 @@
 use crate::zsh::{
-    prompt::{Prompt, PromptCurveLine},
+    prompt::{Prompt, PromptConnection, PromptCurveLine},
     theme_manager,
 };
 use crossterm::terminal;
 use futures::future::join_all;
 use unicode_width::UnicodeWidthStr;
-use zsh_seq::ZshPromptBuilder;
+use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 pub async fn left() {
     let theme = theme_manager::load_theme();
@@ -111,13 +111,14 @@ pub async fn left() {
 
         println!("{}", final_prompt.build());
     }
-
-    // 最終行の描画
-    let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
-    let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
+    let (sc, connection) = match theme.prompt_contents_list.last() {
+        Some(contents) => (contents.color.sc, contents.connection),
+        None => (NamedColor::LightBlack, PromptConnection::default()),
+    };
+    let curved_lines = PromptCurveLine::from(connection);
     let h = &curved_lines.horizontal;
     let end = ZshPromptBuilder::new()
-        .color(default_prompt_contents.color.sc)
+        .color(sc)
         .str(&curved_lines.bottom_left)
         .str(h)
         .str(" ")

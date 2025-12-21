@@ -1,12 +1,10 @@
-use crate::zsh::theme_manager;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 pub async fn transient(exit_code: Option<i32>) {
-    let theme = theme_manager::load_theme();
     let transient_str = "❯ ";
 
     let color = match exit_code {
-        Some(0) => theme.transient_color.pc,
+        Some(0) => NamedColor::Green,
         _ => NamedColor::Red,
     };
 
@@ -16,5 +14,5 @@ pub async fn transient(exit_code: Option<i32>) {
         .end_color()
         .reset_styles();
 
-    print!("{}", prompt.text());
+    print!("{}", prompt.build());
 }
