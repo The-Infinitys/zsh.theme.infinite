@@ -50,6 +50,7 @@ pub enum ZshCommands {
 pub enum PromptType {
     Left,
     Right,
+    Hook,
     Transient {
         #[arg(long, short = 'e')]
         exit_code: Option<i32>,
@@ -62,6 +63,7 @@ impl PromptType {
             Self::Left => 0,
             Self::Right => 1,
             Self::Transient { .. } => 2,
+            Self::Hook { .. } => 2,
         }
     }
 }

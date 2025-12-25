@@ -10,6 +10,7 @@ pub async fn main(command: ZshCommands) {
         ZshCommands::Prompt { side } => match side {
             PromptType::Left => prompt::left().await,
             PromptType::Right => prompt::right().await,
+            PromptType::Hook => prompt::hook(),
             PromptType::Transient { exit_code } => prompt::transient(exit_code).await,
         },
     }

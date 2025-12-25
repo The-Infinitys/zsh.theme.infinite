@@ -9,8 +9,6 @@ use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 pub async fn left() {
     let theme = theme_manager::load_theme();
-
-    // 1. リストが空の場合の早期リターン（またはデフォルト表示）
     if theme.prompt_contents_list.is_empty() {
         // デフォルトのPromptContentsから設定を取得
         let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
