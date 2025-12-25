@@ -1,3 +1,6 @@
 [submodule "zsh-seq"]
 	path = zsh-seq
 	url = https://github.com/The-Infinitys/rust.zsh-seq
+[submodule "zsh-prompts"]
+	path = zsh-prompts
+	url = https://github.com/The-Infinitys/rust.zsh-prompts

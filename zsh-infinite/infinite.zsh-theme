@@ -20,7 +20,7 @@ function _update_infinite_prompt() {
 function _infinite_transient_prompt() {
     local last_status=$?
     export LAST_COMMAND_EXECUTED=$EPOCHREALTIME
-    zsh-infinite zsh prompt hook
+    zsh-infinite zsh prompt hook 2> /dev/null
     PROMPT='$(LAST_STATUS='${last_status}' zsh-infinite zsh prompt transient 2>/dev/null)'
     RPROMPT=''
     zle reset-prompt

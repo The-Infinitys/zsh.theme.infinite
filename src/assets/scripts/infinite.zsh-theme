@@ -1,29 +1,41 @@
 #!/bin/zsh
 
+# プロンプトの置換を有効化
 setopt PROMPT_SUBST
+# 右プロンプトの右端の空白を詰める
 ZLE_RPROMPT_INDENT=0
 
-function set_full_prompt() {
-    # 実行直後の終了ステータスを即座に保存
+# プロンプト更新用のメイン関数
+function _update_infinite_prompt() {
     local last_status=$?
     
-    # 環境変数 LAST_STATUS として Rust 側に渡す
-    # (Rust側の Command::new は親プロセスの環境変数を継承するため)
+    # --- カーソルリセットを実行 ---
+    _reset_cursor
+    
     PROMPT='$(LAST_STATUS='${last_status}' zsh-infinite zsh prompt left 2>/dev/null)'
-    RPROMPT='$(LAST_STATUS='${last_status}' zsh-infinite zsh prompt right 2>/dev/null)'
+    RPROMPT='$(LAST_COMMAND_EXECUTED='$LAST_COMMAND_EXECUTED'LAST_STATUS='${last_status}' zsh-infinite zsh prompt right 2>/dev/null)'
 }
 
-function zle-line-finish() {
+# コマンド確定時（エンターキー押下時）の処理
+function _infinite_transient_prompt() {
     local last_status=$?
-    # Transient時も同様に環境変数を経由させるとRust側のロジックを統一できます
+    export LAST_COMMAND_EXECUTED=$EPOCHREALTIME
+    zsh-infinite zsh prompt hook 2> /dev/null
     PROMPT='$(LAST_STATUS='${last_status}' zsh-infinite zsh prompt transient 2>/dev/null)'
     RPROMPT=''
     zle reset-prompt
 }
-zle -N zle-line-finish
 
-function precmd() {
-    set_full_prompt
+# カーソル形状をデフォルト（ブロック等）に戻す
+function _reset_cursor() {
+    # \e[0 q はターミナル設定のデフォルトに戻すエスケープシーケンス
+    echo -ne '\e[0 q'
 }
 
-set_full_prompt
+# 既存のフックを上書きしないように配列に追加
+autoload -Uz add-zsh-hook
+# precmdはコマンド実行後、次のプロンプトが表示される直前に呼ばれます
+add-zsh-hook precmd _update_infinite_prompt
+
+# Transient Prompt 用のウィジェット登録
+zle -N zle-line-finish _infinite_transient_prompt
