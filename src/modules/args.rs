@@ -47,7 +47,7 @@ pub enum ZshCommands {
     /// Build-In Segments
     BuildIn {
         #[command(subcommand)]
-        segment: zsh_prompts::Commands,
+        segment: Box<zsh_prompts::Commands>,
     },
 }
 
