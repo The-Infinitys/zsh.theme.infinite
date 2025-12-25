@@ -44,6 +44,11 @@ pub enum ZshCommands {
         #[command(subcommand)]
         side: PromptType,
     },
+    /// Build-In Segments
+    BuildIn {
+        #[command(subcommand)]
+        segment: zsh_prompts::Commands,
+    },
 }
 
 #[derive(Subcommand, Clone, Copy, PartialEq, Eq, Debug)] // PartialOrd, Ord は手動実装

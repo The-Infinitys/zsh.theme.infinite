@@ -1,10 +1,12 @@
 mod hook;
 mod left;
 mod right;
+mod segment;
 mod transient;
 pub use hook::hook;
 pub use left::left;
 pub use right::right;
+pub use segment::segment;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 pub use transient::transient;

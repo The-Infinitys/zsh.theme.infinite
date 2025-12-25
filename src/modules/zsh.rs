@@ -13,5 +13,8 @@ pub async fn main(command: ZshCommands) {
             PromptType::Hook => prompt::hook(),
             PromptType::Transient { exit_code } => prompt::transient(exit_code).await,
         },
+        ZshCommands::BuildIn { segment } => {
+            prompt::segment(segment);
+        }
     }
 }
