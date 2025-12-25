@@ -1,0 +1,51 @@
+prompt_contents_list:
+- left:
+  - cmd: zsh
+    args:
+    - -c
+    - ~/.config/zsh-infinite/scripts/os.sh
+  - cmd: zsh
+    args:
+    - -c
+    - ~/.config/zsh-infinite/scripts/pwd.sh
+  right:
+  - cmd: zsh
+    args:
+    - -c
+    - ~/.config/zsh-infinite/scripts/cmd.sh
+  - cmd: zsh
+    args:
+    - -c
+    - ~/.config/zsh-infinite/scripts/git.sh
+  - cmd: zsh
+    args:
+    - -c
+    - ~/.config/zsh-infinite/scripts/time.sh
+  color:
+    bg: Black
+    fg: White
+    pc: FullColor(255,0,127)
+    sc: LightBlack
+    accent: !rainbow FullColor(0,255,255)
+    accent_which: ForeGround
+  connection: Line
+  left_segment_separators:
+    start_separator: Round
+    mid_separator: Slash
+    end_separator: Sharp
+    edge_cap: true
+    bold_separation: true
+  right_segment_separators:
+    start_separator: Sharp
+    mid_separator: BackSlash
+    end_separator: Round
+    edge_cap: true
+    bold_separation: true
+  accent_which: ForeGround
+transient_color:
+  bg: Black
+  fg: White
+  pc: Cyan
+  sc: LightBlack
+  accent: !single LightBlack
+  accent_which: BackGround
