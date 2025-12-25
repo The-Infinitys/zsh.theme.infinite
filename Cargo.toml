@@ -16,3 +16,4 @@ unicode-width = "0.2.2"
 regex = "1.12.2" # Added for regex operations in install/uninstall
 zsh-seq.path="zsh-seq"
 zsh-prompts.path="zsh-prompts"
+shellexpand = "3.1.1"

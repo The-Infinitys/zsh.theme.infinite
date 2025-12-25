@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 use tokio::process::Command;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
@@ -148,20 +148,28 @@ impl PromptContent {
         }
     }
 
-    pub async fn content(&self) -> Option<String> {
+pub async fn content(&self) -> Option<String> {
         if self.cmd.is_empty() {
             return None;
         }
 
-        // Command::new はデフォルトで現在のプロセスの環境変数を継承します
         let mut command = Command::new(&self.cmd);
 
-        // 引数の設定
-        command.args(&self.args);
+        // --- 修正箇所: 引数の環境変数を展開 ---
+        let expanded_args: Vec<String> = self.args.iter().map(|arg| {
+            shellexpand::env(arg)
+                .unwrap_or(Cow::Borrowed(arg))
+                .to_string()
+        }).collect();
+
+        command.args(&expanded_args);
+        // ------------------------------------
+
         if let Ok(current_dir) = std::env::current_dir() {
             command.current_dir(current_dir);
         }
-        // 個別の環境変数を適用（継承したものに追加・上書き）
+
+        // 個別の環境変数を適用
         for env_map in &self.envs {
             for (key, value) in env_map {
                 command.env(key, value);
@@ -186,8 +194,6 @@ impl PromptContent {
                 Some(builder.build())
             }
         } else {
-            // コマンド実行に失敗した場合の処理。
-            // 0以外のステータス時に空文字以外の標準出力がある場合はそれを返す仕様にすることも可能です。
             None
         }
     }

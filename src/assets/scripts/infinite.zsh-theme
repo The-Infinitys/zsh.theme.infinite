@@ -12,8 +12,8 @@ function _update_infinite_prompt() {
     # --- カーソルリセットを実行 ---
     _reset_cursor
     
-    PROMPT='$(LAST_STATUS='${last_status}' zsh-infinite zsh prompt left 2>/dev/null)'
-    RPROMPT='$(LAST_COMMAND_EXECUTED='$LAST_COMMAND_EXECUTED'LAST_STATUS='${last_status}' zsh-infinite zsh prompt right 2>/dev/null)'
+    PROMPT='$(LAST_COMMAND_EXECUTED='$LAST_COMMAND_EXECUTED' LAST_STATUS='${last_status}' zsh-infinite zsh prompt left 2>/dev/null)'
+    RPROMPT='$(LAST_COMMAND_EXECUTED='$LAST_COMMAND_EXECUTED' LAST_STATUS='${last_status}' zsh-infinite zsh prompt right 2>/dev/null)'
 }
 
 # コマンド確定時（エンターキー押下時）の処理
