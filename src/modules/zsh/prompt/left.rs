@@ -54,12 +54,8 @@ pub async fn left() {
         let (left_results, right_results) =
             tokio::join!(join_all(left_futures), join_all(right_futures));
 
-        for content in left_results.into_iter().flatten() {
-            prompt.add_left(&content);
-        }
-        for content in right_results.into_iter().flatten() {
-            prompt.add_right(&content);
-        }
+        prompt.extend_left(left_results);
+        prompt.extend_right(right_results);
 
         let left_content = prompt.render_left(prompt_contents);
         let right_content = prompt.render_right(prompt_contents);

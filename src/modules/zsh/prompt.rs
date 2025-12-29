@@ -10,7 +10,7 @@ pub use segment::segment;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 pub use transient::transient;
-use zsh_seq::ZshPromptBuilder;
+use zsh_seq::{ZshPromptBuilder, ZshSequence};
 
 use crate::zsh::theme::prompt_theme::PromptContents;
 
@@ -32,11 +32,11 @@ impl Prompt {
     fn total_separation(&self) -> usize {
         self.left_separation() + self.right_separation()
     }
-    pub fn add_left(&mut self, content: &str) {
-        self.left.push(content.to_string());
+    pub fn extend_left(&mut self, content: Vec<Vec<ZshSequence>>) {
+        self.left.extend(content);
     }
-    pub fn add_right(&mut self, content: &str) {
-        self.right.push(content.to_string());
+    pub fn extend_right(&mut self, content: Vec<Vec<ZshSequence>>) {
+        self.right.extend(content);
     }
     fn render_left_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         if self.left.is_empty() {
@@ -71,7 +71,10 @@ impl Prompt {
 
         let len = self.left.len();
         for (i, content) in self.left.iter().enumerate() {
-            builder = builder.color_bg(bg_color).str(content).end_color_bg();
+            builder = builder
+                .color_bg(bg_color)
+                .chain(content.to_owned())
+                .end_color_bg();
             if i < len - 1 {
                 let color_pos = (i + 1) as f32 / total;
                 let sep_color = color_scheme.accent.get(color_pos);
@@ -158,7 +161,10 @@ impl Prompt {
         for (i, content) in self.left.iter().enumerate() {
             let color_pos = i as f32 / total;
             let sep_color = color_scheme.accent.get(color_pos);
-            builder = builder.color_bg(sep_color).str(content).end_color_bg();
+            builder = builder
+                .color_bg(sep_color)
+                .chain(content.to_owned())
+                .end_color_bg();
             if i < len - 1 {
                 if seps.bold_separation {
                     let next_color_pos = (i + 1) as f32 / total;
@@ -241,7 +247,10 @@ impl Prompt {
 
         let len = self.right.len();
         for (i, content) in self.right.iter().enumerate() {
-            builder = builder.color_bg(bg_color).str(content).end_color_bg();
+            builder = builder
+                .color_bg(bg_color)
+                .chain(content.to_owned())
+                .end_color_bg();
 
             if i < len - 1 {
                 let color_pos = (self.left_separation() + i + 2) as f32 / total;
@@ -325,7 +334,10 @@ impl Prompt {
         for (i, content) in self.right.iter().enumerate() {
             let color_pos = (self.left_separation() + i + 1) as f32 / total;
             let sep_color = color_scheme.accent.get(color_pos);
-            builder = builder.color_bg(sep_color).str(content).end_color_bg();
+            builder = builder
+                .color_bg(sep_color)
+                .chain(content.to_owned())
+                .end_color_bg();
             if i < len - 1 {
                 let next_color_pos = (self.left_separation() + i + 2) as f32 / total;
                 let next_sep_color = color_scheme.accent.get(next_color_pos);
@@ -395,8 +407,8 @@ impl Prompt {
 
 #[derive(Clone, Default)]
 pub struct Prompt {
-    left: Vec<String>,
-    right: Vec<String>,
+    left: Vec<Vec<ZshSequence>>,
+    right: Vec<Vec<ZshSequence>>,
 }
 #[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PromptConnection {

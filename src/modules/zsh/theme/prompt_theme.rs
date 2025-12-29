@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::HashMap};
 use tokio::process::Command;
-use zsh_seq::{NamedColor, ZshPromptBuilder};
+use zsh_seq::{NamedColor, ZshSequence};
 
 use super::color_scheme::PromptColorScheme;
 // 変更
@@ -183,73 +183,100 @@ impl PromptContent {
             bg_color,
         }
     }
-
-    pub async fn content(&self) -> Option<String> {
+    pub async fn content(&self) -> Vec<ZshSequence> {
+        // 1. Literal の処理
         if let Some(literal) = &self.literal {
-            return Some(literal.clone());
+            return vec![ZshSequence::Literal(literal.clone())];
         }
+
+        // 2. Build-in コマンドの処理
+        // 2. Build-in コマンドの処理
         if let Some(build_in) = &self.build_in {
             let segments = build_in.exec();
-            let mut builder = ZshPromptBuilder::new();
-            for segment in segments {
+            let mut result = Vec::new();
+            let len = segments.len();
+
+            for (i, segment) in segments.into_iter().enumerate() {
+                // 1. 色の開始 (Foreground)
                 if let Some(fg) = segment.color {
-                    builder = builder.color(fg.to_named_color());
+                    result.push(ZshSequence::ForegroundColor(fg.to_named_color()));
                 }
-                builder = builder.str(&segment.format());
-            }
-            return Some(builder.build());
-        }
 
-        if self.cmd.is_none() {
-            return None;
-        }
-        let cmd = self.cmd.as_ref().unwrap();
-        let mut command = Command::new(cmd);
+                // 2. コンテンツ本体
+                result.push(ZshSequence::Literal(segment.content));
 
-        // --- 修正箇所: 引数の環境変数を展開 ---
-        let expanded_args: Vec<String> = self
-            .args
-            .iter()
-            .map(|arg| {
-                shellexpand::env(arg)
-                    .unwrap_or(Cow::Borrowed(arg))
-                    .to_string()
-            })
-            .collect();
-
-        command.args(&expanded_args);
-        // ------------------------------------
-
-        if let Ok(current_dir) = std::env::current_dir() {
-            command.current_dir(current_dir);
-        }
-
-        // 個別の環境変数を適用
-        for env_map in &self.envs {
-            for (key, value) in env_map {
-                command.env(key, value);
-            }
-        }
-
-        let output = command.output().await.ok()?;
-
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if stdout.is_empty() {
-                None
-            } else {
-                let mut builder = ZshPromptBuilder::new();
-                if let Some(fg) = self.fg_color {
-                    builder = builder.color(fg);
+                // 3. 色の終了
+                if segment.color.is_some() {
+                    result.push(ZshSequence::ForegroundColorEnd);
                 }
-                if let Some(bg) = self.bg_color {
-                    builder = builder.color_bg(bg);
+
+                // 4. セグメント間のスペース挿入
+                // 最後のセグメント以外、かつ現在のセグメントが空でない場合にスペースを入れる
+                if i < len - 1 {
+                    result.push(ZshSequence::Literal(" ".to_string()));
                 }
-                builder = builder.str(&stdout).end_color().end_color_bg();
-                Some(builder.build())
             }
-        } else {
-            None
+            return result;
         }
+
+        // 3. 外部コマンド (Shell) の処理
+        if let Some(cmd) = &self.cmd {
+            let mut command = Command::new(cmd);
+
+            let expanded_args: Vec<String> = self
+                .args
+                .iter()
+                .map(|arg| {
+                    shellexpand::env(arg)
+                        .unwrap_or(Cow::Borrowed(arg))
+                        .to_string()
+                })
+                .collect();
+
+            command.args(&expanded_args);
+
+            if let Ok(current_dir) = std::env::current_dir() {
+                command.current_dir(current_dir);
+            }
+
+            for env_map in &self.envs {
+                for (key, value) in env_map {
+                    command.env(key, value);
+                }
+            }
+
+            if let Ok(output) = command.output().await {
+                if output.status.success() {
+                    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !stdout.is_empty() {
+                        let mut seqs = Vec::new();
+
+                        // 背景色
+                        if let Some(bg) = self.bg_color {
+                            seqs.push(ZshSequence::BackgroundColor(bg));
+                        }
+                        // 前景色
+                        if let Some(fg) = self.fg_color {
+                            seqs.push(ZshSequence::ForegroundColor(fg));
+                        }
+
+                        seqs.push(ZshSequence::Literal(stdout));
+
+                        // 終了タグ (順番に注意)
+                        if self.fg_color.is_some() {
+                            seqs.push(ZshSequence::ForegroundColorEnd);
+                        }
+                        if self.bg_color.is_some() {
+                            seqs.push(ZshSequence::BackgroundColorEnd);
+                        }
+
+                        return seqs;
+                    }
+                }
+            }
+        }
+
+        // 失敗、または該当なしの場合は空配列を返す
+        Vec::new()
     }
 }
