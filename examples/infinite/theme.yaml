@@ -1,40 +1,27 @@
 prompt_contents_list:
   - left:
-      - cmd: zsh-infinite
-        args: ["zsh", "build-in", "os"]
-      - cmd: zsh-infinite
-        args: ["zsh", "build-in", "pwd"]
+      - build_in: !Os
+          color: White
+      - build_in: !Pwd
+          color: "#00FFFF"
     right:
-      - cmd: zsh-infinite
-        args:
-          [
-            "zsh",
-            "build-in",
-            "cmd",
-            "--last-status",
-            "${LAST_STATUS}",
-            "--last-command-executed",
-            "${LAST_COMMAND_EXECUTED}",
-          ]
-      - cmd: zsh-infinite
-        args:
-          [
-            "zsh",
-            "build-in",
-            "git",
-            "--git-icon-color", "White",
-            "--branch-color", "White",
-            "--staged-color", "#00FFFF",
-            "--unstaged-color", "Red",
-            "--untracked-color", "#FF007F",
-            "--conflict-color", "Magenta",
-            "--stashed-color", "Black",
-            "--clean-color", "White",
-            "--ahead-color", "White",
-            "--behind-color", "Red",
-          ]
-      - cmd: zsh-infinite
-        args: ["zsh", "build-in", "time"]
+      - build_in: !Cmd
+          last_status: LAST_STATUS
+          last_command_executed: LAST_COMMAND_EXECUTED
+      - build_in: !Git
+          options:
+            git_icon_color_option: White
+            branch_color_option: White
+            staged_color_option: "#00FFFF"
+            unstaged_color_option: Red
+            untracked_color_option: "#FF007F"
+            conflict_color_option: Magenta
+            stashed_color_option: Black
+            clean_color_option: White
+            ahead_color_option: White
+            behind_color_option: Red
+      - build_in: !Time
+          color: White
     color:
       bg: Black
       fg: White
@@ -60,6 +47,6 @@ transient_color:
   bg: Black
   fg: White
   pc: Cyan
-  sc: LightBlack
+  sc: Red
   accent: !single LightBlack
   accent_which: BackGround
