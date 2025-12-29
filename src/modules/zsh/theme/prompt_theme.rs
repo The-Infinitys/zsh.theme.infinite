@@ -148,7 +148,7 @@ impl PromptContent {
         }
     }
 
-pub async fn content(&self) -> Option<String> {
+    pub async fn content(&self) -> Option<String> {
         if self.cmd.is_empty() {
             return None;
         }
@@ -156,11 +156,15 @@ pub async fn content(&self) -> Option<String> {
         let mut command = Command::new(&self.cmd);
 
         // --- 修正箇所: 引数の環境変数を展開 ---
-        let expanded_args: Vec<String> = self.args.iter().map(|arg| {
-            shellexpand::env(arg)
-                .unwrap_or(Cow::Borrowed(arg))
-                .to_string()
-        }).collect();
+        let expanded_args: Vec<String> = self
+            .args
+            .iter()
+            .map(|arg| {
+                shellexpand::env(arg)
+                    .unwrap_or(Cow::Borrowed(arg))
+                    .to_string()
+            })
+            .collect();
 
         command.args(&expanded_args);
         // ------------------------------------
