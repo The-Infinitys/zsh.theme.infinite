@@ -5,7 +5,10 @@ use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 use super::color_scheme::PromptColorScheme;
 // 変更
-use crate::zsh::prompt::{PromptConnection, PromptSeparation};
+use crate::zsh::{
+    prompt::{PromptConnection, PromptSeparation},
+    theme::color_named_color::ToNamedColor,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
 pub enum AccentWhich {
@@ -69,14 +72,14 @@ impl Default for PromptContents {
     fn default() -> Self {
         Self {
             left: vec![
-                PromptContent::new(
+                PromptContent::shell(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "whoami".to_string()],
                     vec![],
                     None,
                     None,
                 ),
-                PromptContent::new(
+                PromptContent::shell(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "hostname".to_string()],
                     vec![],
@@ -85,7 +88,7 @@ impl Default for PromptContents {
                 ),
             ],
             right: vec![
-                PromptContent::new(
+                PromptContent::shell(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "echo ${PWD/#$HOME/\\~}".to_string()],
                     vec![],
@@ -93,7 +96,7 @@ impl Default for PromptContents {
                     None,
                 ),
                 // 終了コードの例（呼び出し側で調整される前提）
-                PromptContent::new(
+                PromptContent::shell(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "echo $LAST_STATUS".to_string()],
                     vec![],
@@ -112,6 +115,10 @@ impl Default for PromptContents {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContent {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub literal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_in: Option<zsh_prompts::Commands>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub envs: Vec<HashMap<String, String>>,
     pub cmd: String,
@@ -132,7 +139,7 @@ pub struct PromptContent {
 }
 
 impl PromptContent {
-    pub fn new(
+    pub fn shell(
         cmd: String,
         args: Vec<String>,
         envs: Vec<HashMap<String, String>>,
@@ -140,6 +147,8 @@ impl PromptContent {
         bg_color: Option<NamedColor>,
     ) -> Self {
         Self {
+            literal: None,
+            build_in: None,
             envs,
             cmd,
             args,
@@ -147,8 +156,49 @@ impl PromptContent {
             bg_color,
         }
     }
+    pub fn build_in(build_in: zsh_prompts::Commands) -> Self {
+        Self {
+            literal: None,
+            build_in: Some(build_in),
+            envs: vec![],
+            cmd: "".to_string(),
+            args: vec![],
+            fg_color: None,
+            bg_color: None,
+        }
+    }
+    pub fn literal(
+        literal: String,
+        fg_color: Option<NamedColor>,
+        bg_color: Option<NamedColor>,
+    ) -> Self {
+        Self {
+            literal: Some(literal),
+            build_in: None,
+            envs: vec![],
+            cmd: "".to_string(),
+            args: vec![],
+            fg_color,
+            bg_color,
+        }
+    }
 
     pub async fn content(&self) -> Option<String> {
+        if let Some(literal) = &self.literal {
+            return Some(literal.clone());
+        }
+        if let Some(build_in) = &self.build_in {
+            let segments = build_in.exec();
+            let mut builder = ZshPromptBuilder::new();
+            for segment in segments {
+                if let Some(fg) = segment.color {
+                    builder = builder.color(fg.to_named_color());
+                }
+                builder = builder.str(&segment.format());
+            }
+            return Some(builder.build());
+        }
+
         if self.cmd.is_empty() {
             return None;
         }

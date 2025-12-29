@@ -1,11 +1,10 @@
-pub mod named_color_serde; // 既存のファイルをそのまま使用
-pub mod named_color_serde_option; // 新しく追加
-
+mod color_named_color;
 pub mod color_scheme;
 pub mod config_ui;
 pub mod gradient;
+pub mod named_color_serde; // 既存のファイルをそのまま使用
+pub mod named_color_serde_option; // 新しく追加
 pub mod prompt_theme;
-
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
 
