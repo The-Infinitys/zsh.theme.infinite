@@ -20,7 +20,6 @@ pub fn dev() {
     let target_path = run_dir.join(exe_name);
     fs::copy(&exe_path, &target_path).expect("Failed to copy self");
 
-    // --- 3. 設定ファイルの設置 (PromptTheme::infinite() -> theme.yaml) ---
     // オブジェクトを生成
     let theme = PromptTheme::infinite();
 

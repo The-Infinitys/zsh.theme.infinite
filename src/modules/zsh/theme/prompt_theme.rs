@@ -256,7 +256,12 @@ impl PromptContent {
             // 3. Build-in の処理 (現在のプロセスで直接実行)
             Self::BuildIn { command } => {
                 let segments = command.exec();
-                Self::convert_segments_to_sequences(segments)
+
+                let result = Self::convert_segments_to_sequences(segments);
+                if result.is_empty() {
+                    panic!("Unknown");
+                }
+                result
             }
 
             // 4. Shell の処理
@@ -333,6 +338,8 @@ impl PromptContent {
                 result.push(ZshSequence::Literal(" ".to_string()));
             }
         }
+        let builder = zsh_seq::ZshPromptBuilder::new().chain(result.clone());
+        eprintln!("{}", builder.build());
         result
     }
 }
