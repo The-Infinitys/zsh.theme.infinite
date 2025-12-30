@@ -7,31 +7,26 @@ use futures::future::join_all;
 use unicode_width::UnicodeWidthStr;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
-pub async fn left() {
+pub async fn left() -> ZshPromptBuilder {
     let theme = prompt_theme();
+    let mut builder = ZshPromptBuilder::new();
     if theme.prompt_contents_list.is_empty() {
         // デフォルトのPromptContentsから設定を取得
         let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
         let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
         let h = &curved_lines.horizontal;
-
-        let start = ZshPromptBuilder::new()
+        return ZshPromptBuilder::new()
             .color(default_prompt_contents.color.sc)
             .str(&curved_lines.top_left)
             .str(h)
             .str(h)
             .str(&curved_lines.top_right)
-            .end_color();
-        println!("{}", start.build());
-
-        let end = ZshPromptBuilder::new()
+            .end_color()
             .color(default_prompt_contents.color.sc)
             .str(&curved_lines.bottom_left)
             .str(h)
             .str(" ")
             .end_color();
-        print!("{}", end.build());
-        return;
     }
 
     // 2. リストがある場合のメインループ
@@ -77,9 +72,6 @@ pub async fn left() {
             .connection
             .to_string()
             .repeat(connection_len / conn_line_width);
-        eprintln!("left: {}", left_width);
-        eprintln!("right {}", right_width);
-        eprintln!("{}", connection_len / conn_line_width);
         let mut row_builder = ZshPromptBuilder::new();
         row_builder = row_builder.color(prompt_contents.color.sc); // `theme.color.sc` から `prompt_contents.color.sc` に変更
 
@@ -106,8 +98,7 @@ pub async fn left() {
                 &curved_lines.cross_right
             })
             .end_color();
-        eprintln!("{}", final_prompt.build());
-        println!("{}", final_prompt.build());
+        builder = builder.connect(final_prompt).newline();
     }
     let (sc, connection) = match theme.prompt_contents_list.last() {
         Some(contents) => (contents.color.sc, contents.connection),
@@ -121,5 +112,5 @@ pub async fn left() {
         .str(h)
         .str(" ")
         .end_color();
-    print!("{}", end.build())
+    builder.connect(end)
 }
