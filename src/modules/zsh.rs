@@ -1,9 +1,9 @@
 use crate::args::{PromptType, ZshCommands};
 
+pub mod daemon;
 mod prompt;
-pub mod theme; // Make theme public
-mod theme_manager;
-pub use theme_manager::{load_theme, save_theme};
+pub mod theme;
+pub use theme::manager::{load_theme, save_theme};
 
 pub async fn main(command: ZshCommands) {
     match command {
@@ -15,6 +15,9 @@ pub async fn main(command: ZshCommands) {
         },
         ZshCommands::BuildIn { segment } => {
             prompt::segment(segment);
+        }
+        ZshCommands::Daemon { command } => {
+            daemon::main(command).await;
         }
     }
 }

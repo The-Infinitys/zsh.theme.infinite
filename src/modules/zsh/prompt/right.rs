@@ -2,11 +2,11 @@ use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 use crate::zsh::{
     prompt::{PromptConnection, PromptCurveLine},
-    theme_manager,
+    theme::manager,
 };
 
 pub async fn right() {
-    let theme = theme_manager::load_theme();
+    let theme = manager::load_theme();
     let (sc, connection) = match theme.prompt_contents_list.last() {
         Some(contents) => (contents.color.sc, contents.connection),
         None => (NamedColor::LightBlack, PromptConnection::default()),

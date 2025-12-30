@@ -49,6 +49,21 @@ pub enum ZshCommands {
         #[command(subcommand)]
         segment: Box<zsh_prompts::Commands>,
     },
+    /// Zsh Daemon
+    Daemon {
+        #[command(subcommand)]
+        command: DaemonCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum DaemonCommands {
+    /// Start the daemon
+    Start,
+    /// Stop the daemon
+    Stop,
+    /// Restart the daemon
+    Restart,
 }
 
 #[derive(Subcommand, Clone, Copy, PartialEq, Eq, Debug)] // PartialOrd, Ord は手動実装

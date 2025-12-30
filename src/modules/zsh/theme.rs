@@ -2,6 +2,7 @@ mod color_named_color;
 pub mod color_scheme;
 pub mod config_ui;
 pub mod gradient;
+pub mod manager;
 pub mod named_color_serde; // 既存のファイルをそのまま使用
 pub mod named_color_serde_option; // 新しく追加
 pub mod prompt_theme;
@@ -9,10 +10,9 @@ use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
 
 use crate::zsh::theme::prompt_theme::{PromptContent, PromptContents};
-use crate::zsh::theme_manager;
 
 pub async fn main() {
-    let mut current_theme = theme_manager::load_theme();
+    let mut current_theme = manager::load_theme();
     loop {
         println!("\n--- Zsh Infinite Theme Configuration ---");
 
@@ -61,7 +61,7 @@ pub async fn main() {
             }
             s if s == options.len() - 1 => {
                 // Save and Exit
-                let _ = theme_manager::save_theme(&current_theme);
+                let _ = manager::save_theme(&current_theme);
                 break;
             }
             _ => unreachable!(),
