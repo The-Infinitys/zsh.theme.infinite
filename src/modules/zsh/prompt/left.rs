@@ -1,6 +1,6 @@
-use crate::zsh::{
-    prompt::{Prompt, PromptConnection, PromptCurveLine},
-    theme::manager,
+use crate::{
+    prompt_theme,
+    zsh::prompt::{Prompt, PromptConnection, PromptCurveLine},
 };
 use crossterm::terminal;
 use futures::future::join_all;
@@ -8,7 +8,7 @@ use unicode_width::UnicodeWidthStr;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 pub async fn left() {
-    let theme = manager::load_theme();
+    let theme = prompt_theme();
     if theme.prompt_contents_list.is_empty() {
         // デフォルトのPromptContentsから設定を取得
         let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();

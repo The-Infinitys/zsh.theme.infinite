@@ -1997,6 +1997,7 @@ dependencies = [
  "directories",
  "futures",
  "libc",
+ "once_cell",
  "regex",
  "rkyv",
  "serde",
