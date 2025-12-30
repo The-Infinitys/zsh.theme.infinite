@@ -144,7 +144,7 @@ impl PromptContents {
                         color: None,
                     },
                 },
-                PromptContent::Daemon {
+                PromptContent::BuildIn {
                     command: zsh_prompts::Commands::Git {
                         path: None,
                         options: zsh_prompts::git::GitStatusOptions {

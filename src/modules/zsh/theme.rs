@@ -9,8 +9,18 @@ pub mod prompt_theme;
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
 
-use crate::zsh::theme::prompt_theme::{PromptContent, PromptContents};
+use crate::{
+    args::ThemeCommands,
+    zsh::theme::prompt_theme::{PromptContent, PromptContents, PromptTheme},
+};
 
+pub fn set(theme: ThemeCommands) {
+    let theme = match theme {
+        ThemeCommands::Default => PromptTheme::default(),
+        ThemeCommands::Infinite => PromptTheme::infinite(),
+    };
+    let _ = manager::save_theme(&theme);
+}
 pub async fn main() {
     let mut current_theme = manager::load_theme();
     loop {

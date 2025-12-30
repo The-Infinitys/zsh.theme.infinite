@@ -11,6 +11,12 @@ async fn main() {
         args::Commands::Uninstall => utils::uninstall(),
         #[cfg(debug_assertions)]
         args::Commands::Dev => utils::dev(),
-        args::Commands::Theme => zsh::theme::main().await,
+        args::Commands::Theme { command } => {
+            if let Some(command) = command {
+                zsh::theme::set(command)
+            } else {
+                zsh::theme::main().await
+            }
+        }
     }
 }

@@ -4,7 +4,7 @@
 setopt PROMPT_SUBST
 # 右プロンプトの右端の空白を詰める
 ZLE_RPROMPT_INDENT=0
-{{RUN_DIR}}/zsh-infinite zsh daemon start > /dev/null 2>&1 &!
+{{RUN_DIR}}/zsh-infinite zsh daemon restart 2> /dev/null >>{{RUN_DIR}}/log.txt &!
 # プロンプト更新用のメイン関数
 function _update_infinite_prompt() {
     local last_status=$?
@@ -19,6 +19,8 @@ function _update_infinite_prompt() {
 function _infinite_transient_prompt() {
     local last_status=$?
     export LAST_COMMAND_EXECUTED=$EPOCHREALTIME
+    PROMPT=''
+    zle reset-prompt
     zsh-infinite zsh prompt hook 2> /dev/null
     PROMPT='$(LAST_STATUS='${last_status}' {{RUN_DIR}}/zsh-infinite zsh prompt transient 2>/dev/null)'
     RPROMPT=''

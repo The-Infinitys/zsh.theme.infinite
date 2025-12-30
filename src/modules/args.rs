@@ -34,7 +34,18 @@ pub enum Commands {
     #[cfg(debug_assertions)]
     Dev,
     /// Manage Zsh theme
-    Theme,
+    Theme {
+        #[command(subcommand)]
+        command: Option<ThemeCommands>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ThemeCommands {
+    /// Basic, Normal, Good for eyes
+    Default,
+    /// Theme for The Infinity's
+    Infinite,
 }
 
 #[derive(Subcommand)]
