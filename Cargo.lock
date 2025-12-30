@@ -2230,6 +2230,7 @@ dependencies = [
  "zsh-module",
  "zsh-prompts",
  "zsh-seq",
+ "zsh-sys",
 ]
 
 [[package]]
