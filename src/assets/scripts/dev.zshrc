@@ -21,7 +21,6 @@ if [[ "$res" == "2" ]]; then
 else
     # --- ライブラリモード ---
     echo ">>> Mode: Library"
-    
     # 1. module_path の設定
     # ライブラリがビルドされている target/debug を検索パスに追加
     # ({{RUN_DIR}} の一つ上の target/debug を指すように調整)
@@ -34,6 +33,7 @@ else
         # モジュール版は Rust 側で PROMPT 変数を直接管理するため、
         # setopt PROMPT_SUBST のみ有効化する
         setopt PROMPT_SUBST
+        zsh-infinite-module
     else
         echo "Error: Failed to load zsh_infinite module from module_path."
         # echo "Falling back to Binary mode..."
