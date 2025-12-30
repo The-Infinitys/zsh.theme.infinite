@@ -17,3 +17,6 @@ regex = "1.12.2" # Added for regex operations in install/uninstall
 zsh-seq.path="zsh-seq"
 zsh-prompts.path="zsh-prompts"
 shellexpand = "3.1.1"
+daemonize = "0.5.0"
+libc = "0.2.178"
+rkyv = { version = "0.8.12", features = ["std"] }

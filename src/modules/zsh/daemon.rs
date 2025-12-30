@@ -1,7 +1,11 @@
 use crate::args::DaemonCommands;
 
+mod get;
+mod paths;
+mod server;
 mod start;
 mod stop;
+pub use get::get;
 use start::start;
 use stop::stop;
 
