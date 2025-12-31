@@ -25,6 +25,7 @@ unicode-width = "0.2.2"
 regex = "1.12.2"
 zsh-seq.path = "zsh-seq"
 zsh-prompts.path = "zsh-prompts"
+zsh-system = { path = "zsh-system", features = ["5-9"] }
 shellexpand = "3.1.1"
 daemonize = "0.5.0"
 libc = "0.2.178"
