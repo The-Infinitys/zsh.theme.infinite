@@ -4,3 +4,6 @@
 [submodule "zsh-prompts"]
 	path = zsh-prompts
 	url = https://github.com/The-Infinitys/rust.zsh-prompts
+[submodule "zsh-system"]
+	path = zsh-system
+	url = https://github.com/The-Infinitys/rust.zsh-system
