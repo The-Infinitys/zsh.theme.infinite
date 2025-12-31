@@ -27,19 +27,21 @@ impl ZshModule for ZshInfinite {
     }
 
     fn boot(&mut self) -> ZshResult {
-        // precmd だけでなく exit (シェル終了時) にも登録
-        Hook::add("preexec", my_precmd_logger)?;
+        let list = Hook::list();
         Hook::add("exit", my_precmd_logger)?;
+        zsh_system::eval(include_str!("./assets/scripts/zmod.sh"));
         eprintln!("[ZshInfinite] Hooks are registered.");
+        eprintln!("Available hooks: {:?}", list);
         Ok(())
     }
 
     fn features(&self) -> Features {
         // 3. ビルトインコマンドの登録
         Features::new()
-            .add_builtin("hello_infinite", |name, args| {
+            .add_builtin("zmod_infinite", |name, args| {
                 println!("Greetings from {}!", name);
                 println!("Arguments passed: {:?}", args);
+                zsh_system::eval("autoload -Uz add-zsh-hook && add-zsh-hook precmd ls");
                 0 // 成功
             })
             .add_builtin("rust_status", |_, _| {
@@ -49,8 +51,8 @@ impl ZshModule for ZshInfinite {
     }
 
     fn cleanup(&mut self) -> ZshResult {
-        let _ = Hook::remove("precmd", my_precmd_logger);
-        let _ = Hook::remove("exit", my_precmd_logger);
+        Hook::remove("precmd", my_precmd_logger)?;
+        Hook::remove("exit", my_precmd_logger)?;
         Ok(())
     }
 
