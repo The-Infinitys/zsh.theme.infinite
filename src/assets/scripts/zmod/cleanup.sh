@@ -1,13 +1,28 @@
 #!/bin/zsh
 
-# 1. 登録したフックを解除 (add-zsh-hook -d を使用)
+# 1. フックの解除
 autoload -Uz add-zsh-hook
-add-zsh-hook -d precmd _update_infinite_prompt
+add-zsh-hook -d precmd _zsh_infinite_precmd
 
-# 3. 定義したシェル関数を削除してメモリを解放
-unfunction _update_infinite_prompt
-unfunction _infinite_transient_prompt
-unfunction _reset_infinite_cursor
+# 2. ZLEウィジェットの復元
+if zle -l zle-line-finish; then
+    # 保存していた元のウィジェット名を取得
+    local original_widget
+    original_widget=$(__zsh_infinite_internal get zle-line-finish 2>/dev/null)
+    
+    # 現在のカスタムウィジェットを削除
+    zle -D zle-line-finish
+    
+    # 元のウィジェットが存在していれば再登録
+    if [[ -n "$original_widget" && "$original_widget" != "builtin" ]]; then
+        zle -N zle-line-finish "$original_widget"
+    fi
+fi
 
+# 3. 関数と環境変数の削除
+unfunction _zsh_infinite_precmd
+unfunction _zsh_infinite_line_finish
+unset ZLE_RPROMPT_INDENT
 
-# 5. オプションを戻す（必要に応じて）
+# 4. オプションを戻す（必要に応じて）
+setopt PROMPT_SUBST

@@ -1,8 +1,10 @@
+use clap::Parser;
 use tokio::runtime::Runtime;
 use zsh_system::{Features, ZshModule, ZshParameter, ZshResult, export_module};
 
+mod args;
 use crate::{args::PromptType, zsh};
-
+use args::ZmodArgs;
 struct ZshInfinite {
     rt: Option<Runtime>,
     old_prompt: String,
@@ -33,6 +35,31 @@ impl ZshInfinite {
         ZshParameter::set_str("RPROMPT", &right_prompt)?;
         Ok(())
     }
+    pub fn line_finish(&mut self) -> ZshResult {
+        if self.rt.is_none() {
+            self.rt = Some(Runtime::new().unwrap());
+        }
+        let rt = self.rt.as_ref().unwrap();
+
+        let exit_code = ZshParameter::get_int("?") as i32;
+        ZshParameter::set_str("PROMPT", "")?;
+        ZshParameter::set_str("RPROMPT", "")?;
+        zsh_system::eval("zle reset-prompt");
+        // 3. Transient Prompt (確定後の表示) を構築
+        let hook_prompt = rt.block_on(async { zsh::build_prompt(&PromptType::Hook).await.build() });
+        let transient_prompt = rt.block_on(async {
+            zsh::build_prompt(&PromptType::Transient {
+                exit_code: Some(exit_code),
+            })
+            .await
+            .build()
+        });
+        print!("{}", hook_prompt);
+        ZshParameter::set_str("PROMPT", &transient_prompt)?;
+        ZshParameter::set_str("RPROMPT", "")?;
+        zsh_system::eval("zle reset-prompt");
+        Ok(())
+    }
 }
 impl ZshModule for ZshInfinite {
     fn setup(&mut self) -> ZshResult {
@@ -48,12 +75,19 @@ impl ZshModule for ZshInfinite {
     }
 
     fn features(&self) -> Features {
-        Features::new().add_builtin("__zsh_infinite_internal_precmd", |_, _| {
-            match ZshInfinite::with_instance(|zsh_infinite| zsh_infinite.precmd()) {
-                Ok(()) => 0,
+        Features::new().add_builtin("__zsh_infinite_internal", |name, args| {
+            let args = std::iter::once(name).chain(args.iter().copied());
+            match ZmodArgs::try_parse_from(args) {
+                Ok(zmod_args) => match zmod_args.run() {
+                    Ok(()) => 0,
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        1
+                    }
+                },
                 Err(e) => {
-                    eprintln!("ZshInfinite::precmd failed: {}", e.to_string());
-                    1
+                    eprintln!("{}", e);
+                    2
                 }
             }
         })
