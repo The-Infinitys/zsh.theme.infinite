@@ -1,5 +1,7 @@
 #!/bin/zsh
 unsetopt PROMPT_SUBST
+# パターンマッチに失敗してもエラーを出さず、そのまま文字列として扱う
+setopt no_nomatch
 ZLE_RPROMPT_INDENT=0
 
 

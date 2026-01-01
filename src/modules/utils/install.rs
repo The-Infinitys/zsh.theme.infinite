@@ -1,5 +1,13 @@
 use super::paths;
-use std::{env, fs, path::PathBuf};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+use std::{
+    env::{self, home_dir},
+    fs,
+    path::PathBuf,
+};
+
+const LIB_DATA: &[u8] = include_bytes!(env!("ZSH_LIB_PATH"));
 
 pub fn install() {
     let install_paths = match paths::get_install_paths() {
@@ -9,7 +17,35 @@ pub fn install() {
             return;
         }
     };
+    let lib_dir = home_dir().unwrap().join(".local/lib");
+    if let Err(e) = fs::create_dir_all(&lib_dir) {
+        eprintln!("Error creating library directory {:?}: {}", lib_dir, e);
+        return;
+    }
 
+    // OSに応じた拡張子の決定
+    let lib_file_name = if cfg!(target_os = "macos") {
+        "libzsh_infinite.dylib"
+    } else {
+        "libzsh_infinite.so"
+    };
+    let lib_dest_path = lib_dir.join(lib_file_name);
+
+    match fs::write(&lib_dest_path, LIB_DATA) {
+        Ok(_) => {
+            println!("Shared library installed to: {:?}", lib_dest_path);
+            // 実行権限の付与（必要に応じて）
+            #[cfg(unix)]
+            let _ = fs::set_permissions(&lib_dest_path, fs::Permissions::from_mode(0o755));
+        }
+        Err(e) => {
+            eprintln!(
+                "Error installing shared library to {:?}: {}",
+                lib_dest_path, e
+            );
+            return;
+        }
+    }
     // 1. Create necessary directories for bin
     if let Err(e) = fs::create_dir_all(&install_paths.bin_dir) {
         eprintln!(

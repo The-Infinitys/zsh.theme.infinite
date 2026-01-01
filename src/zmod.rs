@@ -12,7 +12,6 @@ struct ZshInfinite {
     old_rprompt: String,
 }
 
-
 impl ZshInfinite {
     pub fn precmd(&mut self) -> ZshResult {
         if self.rt.is_none() {

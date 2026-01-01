@@ -21,7 +21,7 @@ fi
 
 # 3. 関数と環境変数の削除
 unfunction _zsh_infinite_precmd
-unfunction _zsh_infinite_line_finish
+unfunction _zle_infinite_line_finish
 unset ZLE_RPROMPT_INDENT
 
 # 4. オプションを戻す（必要に応じて）

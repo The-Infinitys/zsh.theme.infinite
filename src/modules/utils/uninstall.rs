@@ -1,6 +1,10 @@
 use super::paths;
 use regex::Regex;
-use std::{env, fs, path::PathBuf};
+use std::{
+    env::{self, home_dir},
+    fs,
+    path::PathBuf,
+};
 
 pub fn uninstall() {
     let install_paths = match paths::get_install_paths() {
@@ -10,7 +14,26 @@ pub fn uninstall() {
             return;
         }
     };
+    // --- 追加: ライブラリの削除処理 ---
+    let lib_dir = home_dir().unwrap().join(".local/lib");
+    let lib_file_name = if cfg!(target_os = "macos") {
+        "libzsh_infinite.dylib"
+    } else {
+        "libzsh_infinite.so"
+    };
+    let lib_path = lib_dir.join(lib_file_name);
 
+    if lib_path.exists() {
+        // 現在のプロセスがライブラリをロードしているかチェック
+        // (zsh-infinite バイナリ自身が zmodload されているわけではないため、通常は削除可能)
+        match fs::remove_file(&lib_path) {
+            Ok(_) => println!("Removed shared library: {:?}", lib_path),
+            Err(e) => {
+                // 使用中の場合は unlink に失敗することがある
+                eprintln!("Could not remove library file (it might be in use): {}", e);
+            }
+        }
+    }
     // 1. Remove the executable
     let current_exe_name = match env::current_exe() {
         Ok(path) => path.file_name().map(|s| s.to_os_string()),
