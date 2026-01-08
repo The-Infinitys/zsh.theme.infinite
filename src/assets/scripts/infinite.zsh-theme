@@ -2,7 +2,7 @@
 
 # --- 1. 環境判定とライブラリロードの試行 ---
 # VS Codeではない、かつ libzsh_infinite が利用可能な場合はライブラリモードに移行
-if [[ "ZSH_INFINITE_BINMODE" != "true" && "$TERM_PROGRAM" != "vscode" ]]; then
+if [[ "ZSH_INFINITE_BINMODE" != "true" && "$TERM_PROGRAM" != "vscode" && "$TERMINAL_EMULATOR" != "JetBrains-JediTerm" ]]; then
     # モジュールパスの追加（重複を避けるため ${(U)} でユニーク化）
     module_path=($HOME/.local/lib/ $module_path)
     
